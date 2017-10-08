@@ -9,3 +9,13 @@ hence the build tool should handle all the synchronization.
 
 We could further extend the idea to creating pull requests
 touching multiple projects at once.
+
+Working with PHP 5.6.
+
+Install in root of codebase:
+
+`composer require --dev phpunit/phpunit`
+
+Add to path:
+
+`PATH=$PATH:$HOME/codebase/vendor/bin`
