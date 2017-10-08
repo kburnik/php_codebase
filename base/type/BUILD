@@ -13,5 +13,6 @@ php_test(
   deps=[
     ":immutable",
     "//base/type/testing"
-  ]
+  ],
+  size="small"
 )

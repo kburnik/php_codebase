@@ -49,9 +49,11 @@ def _php_library_impl(ctx):
 def _php_test_impl(ctx):
   direct_src_files = [f.path for f in ctx.files.srcs]
 
+  # TODO(kburnik): This is required by the test rule, usually we'd use the
+  # content for the phpunit command.
   ctx.file_action(
       output=ctx.outputs.executable,
-      content="echo ")
+      content="echo 'Running test'")
 
   ctx.actions.run(
       inputs=ctx.files.srcs,
@@ -64,7 +66,6 @@ def _php_test_impl(ctx):
                                    ctx.attr.deps,
                                    include_srcs=True)
   return [PhpFiles(transitive_sources=trans_srcs)]
-
 
 
 php_library = rule(
