@@ -1,6 +1,9 @@
 #!/usr/bin/env php
 <?php
-// This should only run via php_library build rule.
+
+# Bootstraps a PHP library - sets up autoloading and includes files.
+
+# TODO(burnik): Try running srcs from blaze-bin instead of the src dir.
 
 require_once(__DIR__ . "/vendor/autoload.php");
 

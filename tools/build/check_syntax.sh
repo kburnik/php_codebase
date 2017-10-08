@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Checks the syntax and executes PHP files.
+# Checks the syntax of PHP files.
 
 set -u
 
