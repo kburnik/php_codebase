@@ -25,4 +25,3 @@ abstract class Immutable {
     $this->_immutable[$key] = $value;
   }
 }
-
