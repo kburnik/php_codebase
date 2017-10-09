@@ -7,8 +7,8 @@ sh_binary(
 )
 
 sh_binary(
-  name="runtest",
-  srcs=["runtest.php"],
+  name="gentest",
+  srcs=["gentest.php"],
   visibility=["//visibility:public"]
 )
 

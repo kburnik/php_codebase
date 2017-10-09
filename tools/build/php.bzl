@@ -85,7 +85,7 @@ def _php_test_impl(ctx):
       outputs=[ctx.outputs.executable],
       arguments=[ctx.outputs.executable.path] + direct_src_files,
       progress_message="Testing %s" % ctx.label.name,
-      executable=ctx.executable._runtest)
+      executable=ctx.executable._gentest)
   return [DefaultInfo(
             files=test_deps,
             runfiles=ctx.runfiles(files=[ctx.outputs.executable]))]
@@ -106,9 +106,9 @@ build_common = {
                               cfg="host",
                               allow_files=True,
                               default=Label("//:bootstrap")),
-      "_runtest": attr.label(executable=True, cfg="host",
+      "_gentest": attr.label(executable=True, cfg="host",
                              allow_files=True,
-                             default=Label("//:runtest")),
+                             default=Label("//:gentest")),
   },
 }
 

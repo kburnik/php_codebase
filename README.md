@@ -88,12 +88,9 @@ even when the source files change:
 
 `bazel test base/type:immutable_test --nocache_test_results`
 
-The library rule should copy the src files into a bazel directory and tests
-should run from there, as well as binaries.
-
 Check that dependencies are actually used, i.e. need a build cleaner.
 
-Devise a way to automatically add dependecies based on PHP use statements.
+Devise a way to automatically add dependencies based on PHP use statements.
 
 Install PHP beautifier (can't do newlines properly)
 
