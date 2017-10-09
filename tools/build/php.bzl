@@ -19,6 +19,7 @@ def get_transitive_srcs(srcs, deps, include_srcs=True):
     trans_srcs += srcs
   return trans_srcs
 
+
 def _php_library_impl(ctx):
   # The list of arguments we pass to the script.
   direct_src_files = [f.path for f in ctx.files.srcs]

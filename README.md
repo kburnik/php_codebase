@@ -38,6 +38,10 @@ Add to path (if want to run):
 
 ## TODO
 
+Make bazel realize when src files have changed, now you need to run like this:
+
+`bazel test base/type:immutable_test --nocache_test_results`
+
 Install PHP beautifier (can't do newlines properly)
 
 `sudo pear install channel://pear.php.net/PHP_Beautifier-0.1.15`
