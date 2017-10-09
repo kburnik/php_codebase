@@ -9,7 +9,8 @@ class CannotReadWhileUnfrozen extends MemberAccessException {
  // @override
   protected function buildMesasge($className, $member) {
     return "Cannot read member $className::$member while immutable object is" .
-           " unfrozen. Did you call the parent constructor?";
+           " unfrozen. Did you forget to call the parent constructor of " .
+           "$className?";
   }
 }
 

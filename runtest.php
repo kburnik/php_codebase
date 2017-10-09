@@ -10,7 +10,7 @@ $autoload = __DIR__ . "/autoload.php";
 
 foreach($testfiles as $testfile) {
   $DIR=__DIR__;
-  $flags="--report-useless-tests --testdox";
+  $flags="--report-useless-tests";
   file_put_contents(
       $outputfile,
       "echo 'Testing: $testfile'\n" .
