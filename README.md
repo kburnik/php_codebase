@@ -38,14 +38,22 @@ Add to path (if want to run):
 
 ## TODO
 
-Make bazel realize when src files have changed, now you need to run like this:
+Make bazel realize when src files have changed, now you need to run like this
+even when the source files change:
 
 `bazel test base/type:immutable_test --nocache_test_results`
+
+The library rule should copy the src files into a bazel directory and tests
+should run from there, as well as binaries.
+
+Check that dependencies are actually used, i.e. need a build cleaner.
+
+Devise a way to automatically add dependecies based on PHP use statements.
 
 Install PHP beautifier (can't do newlines properly)
 
 `sudo pear install channel://pear.php.net/PHP_Beautifier-0.1.15`
 
-Install php-cs-fixer (can't do indent of spaces)
+Install php-cs-fixer (can't do indent of 2 spaces)
 
 `composer global require friendsofphp/php-cs-fixer`
