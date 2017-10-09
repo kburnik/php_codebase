@@ -6,14 +6,15 @@ array_shift($argv);
 array_shift($argv);
 $testfiles = $argv;
 
-$autoload = __DIR__ . "/autoload.php";
+$DIR = __DIR__ . "/bazel-bin";
+$autoload = "$DIR/autoload.php";
 
 foreach($testfiles as $testfile) {
-  $DIR=__DIR__;
   $flags="--report-useless-tests";
   file_put_contents(
       $outputfile,
-      "echo 'Testing: $testfile'\n" .
+      "echo 'Testing: $testfile' in \$(pwd)\n" .
+      "echo $DIR/vendor/bin/phpunit $flags --bootstrap $autoload $DIR/$testfile\n" .
       "$DIR/vendor/bin/phpunit $flags --bootstrap $autoload $DIR/$testfile\n",
       FILE_APPEND);
 }

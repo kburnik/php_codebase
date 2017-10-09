@@ -16,3 +16,10 @@ spl_autoload_register(function($class) {
   return $exists;
 });
 
+if (count($argv) > 1) {
+  array_shift($argv);
+  foreach ($argv as $arg) {
+    echo "Loading $arg\n";
+    require_once($arg);
+  }
+}

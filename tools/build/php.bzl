@@ -20,37 +20,64 @@ def get_transitive_srcs(srcs, deps, include_srcs=True):
   return trans_srcs
 
 
-def _php_library_impl(ctx):
+def _place_files_impl(ctx):
   # The list of arguments we pass to the script.
   direct_src_files = [f.path for f in ctx.files.srcs]
   transitive_src_files = \
       [f.path for f in get_transitive_srcs(ctx.files.srcs, ctx.attr.deps,
                                            include_srcs=False)]
-  # Check syntax.
+  syntax_check_result = ctx.actions.declare_file("_syntax." + ctx.label.name)
+
+  # Filter to php files for syntax checking.
+  php_files = []
+  for file in direct_src_files:
+    if file.endswith('.php'):
+      php_files.append(file)
+
   ctx.actions.run(
-      inputs=ctx.files.srcs,
-      outputs=[ctx.outputs.check_syntax],
-      arguments=[ctx.outputs.check_syntax.path] + direct_src_files,
-      progress_message="Checking %s" % ctx.label.name,
-      executable=ctx.executable._check_syntax)
-  # Run files.
-  ctx.actions.run(
-      inputs=ctx.files.srcs,
-      outputs=[ctx.outputs.bootstrap],
-      arguments=[ctx.outputs.bootstrap.path] +
-                ["--deps"] + transitive_src_files +
-                ["--srcs"] + direct_src_files,
-      progress_message="Running %s" % ctx.label.name,
-      executable=ctx.executable._bootstrap)
-  trans_srcs = get_transitive_srcs(ctx.files.srcs,
-                                   ctx.attr.deps,
-                                   include_srcs=True)
-  return [PhpFiles(transitive_sources=trans_srcs)]
+    inputs=ctx.files.srcs,
+    outputs=[syntax_check_result],
+    arguments=[syntax_check_result.path] + php_files,
+    progress_message="Checking PHP syntax of %s" % ctx.label.name,
+    executable=ctx.executable._check_syntax)
+
+  outputs = depset()
+  for dep in ctx.attr.deps:
+    outputs += dep[DefaultInfo].files
+
+  src_copies = depset()
+  outputs += [syntax_check_result]
+  for src in ctx.files.srcs:
+    src_copy = ctx.actions.declare_file(
+        src.path if ctx.attr.recursive else src.basename)
+    src_copies += [src_copy]
+    outputs += [src_copy, syntax_check_result]
+    ctx.actions.run_shell(
+      outputs=[src_copy],
+      inputs=[src],
+      progress_message="Copy to output dir: %s" % src.path,
+      command="cp {src} {dest}".format(src=src.path, dest=src_copy.path))
+
+  transitive_sources = get_transitive_srcs(ctx.files.srcs, ctx.attr.deps)
+  runfiles = []
+  if ctx.attr.bootstrap:
+    lib_file = ctx.actions.declare_file(ctx.label.name + ".phplib")
+    runfiles += [lib_file]
+    ctx.actions.run(
+        inputs=outputs,
+        outputs=[lib_file],
+        arguments=[lib_file.path] + direct_src_files,
+        progress_message="Bootstraping %s" % ctx.label.name,
+        executable=ctx.executable._bootstrap)
+
+  return [DefaultInfo(files=outputs, runfiles=ctx.runfiles(files=runfiles)),
+          PhpFiles(transitive_sources=transitive_sources)]
 
 
 def _php_test_impl(ctx):
   # Build all the files required for testing first.
-  _php_library_impl(ctx)
+  res = _place_files_impl(ctx)
+  test_deps = res[0].files
 
   direct_src_files = [f.path for f in ctx.files.srcs]
   ctx.actions.run(
@@ -59,14 +86,18 @@ def _php_test_impl(ctx):
       arguments=[ctx.outputs.executable.path] + direct_src_files,
       progress_message="Testing %s" % ctx.label.name,
       executable=ctx.executable._runtest)
-  return [DefaultInfo(runfiles=ctx.runfiles(files=ctx.files.srcs))]
+  return [DefaultInfo(
+            files=test_deps,
+            runfiles=ctx.runfiles(files=[ctx.outputs.executable]))]
 
 
 # Common for library, testing & running.
 build_common = {
   "attrs": {
       "srcs": attr.label_list(allow_files=True),
-      "deps": attr.label_list(),
+      "deps": attr.label_list(allow_files=False),
+      "recursive": attr.bool(default=False),
+      "bootstrap": attr.bool(default=True),
       "_check_syntax": attr.label(executable=True,
                                   cfg="host",
                                   allow_files=True,
@@ -79,17 +110,26 @@ build_common = {
                              allow_files=True,
                              default=Label("//:runtest")),
   },
-  "outputs": {"check_syntax": "%{name}.syntax.txt",
-              "bootstrap": "%{name}.bootstrap.txt"},
 }
 
-php_library = rule(
-  implementation=_php_library_impl,
+_place_files_rule = rule(
+  implementation=_place_files_impl,
   **build_common
 )
 
-php_test = rule(
+_php_test = rule(
   implementation=_php_test_impl,
   test=True,
   **build_common
 )
+
+
+def php_library(**kwargs):
+  if kwargs['name'] != 'autoload':
+    kwargs['deps'] += ['//:autoload']
+  _place_files_rule(**kwargs)
+
+
+def php_test(**kwargs):
+  kwargs['deps'] += ['//:autoload', '//:vendor_phpunit']
+  _php_test(**kwargs)
