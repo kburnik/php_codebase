@@ -35,6 +35,51 @@ Add to path (if want to run):
 
 `PATH=$PATH:$HOME/codebase/vendor/bin`
 
+## Concepts and terminology
+
+Since PHP is an interpreted language, a library and a binary don't fall in to
+the conventional concept of those terms.
+
+Building ensures that all source files have valid syntax and can reach runtime.
+It also extracts only the required files from the entire source tree which get
+executed. It is therefore easy to package and ship those files either as a
+container or an application in a traditional sense.
+
+Here we touch on the build rules associated with building PHP code:
+
+* PHP library
+* PHP executable
+* PHP test
+
+### PHP library
+
+A library is a set of symbols defined in one or more files which live in the
+same directory. A library should not execute code, apart from defining symbols
+like constants, functions and classes. One library may depend on other libraries
+living in other source tree directories.
+
+To build a library is in essence to copy the source files into an output
+directory, preserving the path structure and not modifying any code.
+
+### PHP executable
+
+A PHP executable is a single script file which executes PHP code, meaning it
+takes inputs and produces outputs. An executable may depend on PHP libraries.
+The main file should have a `function main($argv) {}` and this is considered
+the entry point method.
+
+Building an executable is achieved through copying the executable source files,
+all transitive dependencies (i.e. libraries) to their respective directories and
+also produce a bootstrapping entry point which handles autoloading of symbols,
+includes the executable sources and calls the `main()`.
+
+### PHP test
+
+A PHP test is a library which can execute test methods from test case classes. A
+test usually depends at least on one library or an executable.
+
+To build a PHP test is similar as to building a library, the main difference is
+we also produce an executable file which runs all the test cases.
 
 ## TODO
 
