@@ -133,3 +133,4 @@ def php_library(**kwargs):
 def php_test(**kwargs):
   kwargs['deps'] += ['//:autoload', '//:vendor_phpunit']
   _php_test(**kwargs)
+
