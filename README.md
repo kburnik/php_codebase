@@ -83,11 +83,6 @@ we also produce an executable file which runs all the test cases.
 
 ## TODO
 
-Make bazel realize when src files have changed, now you need to run like this
-even when the source files change:
-
-`bazel test base/type:immutable_test --nocache_test_results`
-
 Check that dependencies are actually used, i.e. need a build cleaner.
 
 Devise a way to automatically add dependencies based on PHP use statements.
