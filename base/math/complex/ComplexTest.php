@@ -32,3 +32,5 @@ class ComplexTest extends TestCase {
         (string)Complex::of(2.35, 4.72));
   }
 }
+
+echo "From ComplexTest.php\n";

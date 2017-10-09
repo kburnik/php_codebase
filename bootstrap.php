@@ -1,9 +1,11 @@
 #!/usr/bin/env php
 <?php
+# Bootstraps a PHP library - sets up autoloading and includes all dependant
+# source files. This ensures the code is valid and can actually execute.
 
-# Bootstraps a PHP library - sets up autoloading and includes files.
-
-# TODO(burnik): Try running srcs from blaze-bin instead of the src dir.
+# TODO(burnik): Try running srcs from blaze-bin instead of the src dir
+# This would ensure we have executable copies of the files, for example
+# when we want to run tests while we have changed files which were not rebuilt.
 
 require_once(__DIR__ . "/vendor/autoload.php");
 
@@ -28,7 +30,6 @@ foreach($argv as $arg) {
 spl_autoload_register(function($class) {
   global $all_sources;
   $classFilePath = str_replace("\\", "/", $class) . ".php";
-
   $exists = in_array($classFilePath, $all_sources);
 
   if ($exists) {
@@ -39,18 +40,23 @@ spl_autoload_register(function($class) {
 });
 
 if (count($elements['srcs']) == 0) {
-  throw new Exception("No source files provided");
+  throw new Exception("No source files provided.");
 }
 
-foreach ($elements['srcs'] as $script) {
+# TODO(kburnik): These should be direct sources only. We want builds to fail
+# (even for  test targets) if scripts can't get executed, i.e. find all deps.
+foreach ($all_sources as $script) {
+  if (in_array("verbose", $argv)) {
+     echo " * Bootstrapping $src\n";
+  }
   ob_start();
+  file_put_contents($output, ob_get_contents(), FILE_APPEND);
   require_once(__DIR__ . "/" . $script);
-  file_put_contents($output, ob_get_contents());
   ob_end_clean();
   if (filesize($output) > 0) {
     echo "-- output $script --\n";
     echo file_get_contents($output);
     echo "\n-- /output --\n";
-    throw new Exception("Executed script should not output!");
+    throw new Exception("Library script should not output.");
   }
 }

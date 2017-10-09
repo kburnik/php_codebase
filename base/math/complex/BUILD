@@ -4,7 +4,6 @@ php_library(
   name="complex",
   srcs=["Complex.php"],
   deps=[
-    "//base/except",
     "//base/type:immutable",
   ],
 )

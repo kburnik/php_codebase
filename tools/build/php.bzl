@@ -35,8 +35,8 @@ def _php_library_impl(ctx):
   # Run files.
   ctx.actions.run(
       inputs=ctx.files.srcs,
-      outputs=[ctx.outputs.execute_output],
-      arguments=[ctx.outputs.execute_output.path] +
+      outputs=[ctx.outputs.bootstrap],
+      arguments=[ctx.outputs.bootstrap.path] +
                 ["--deps"] + transitive_src_files +
                 ["--srcs"] + direct_src_files,
       progress_message="Running %s" % ctx.label.name,
@@ -60,8 +60,9 @@ def _php_test_impl(ctx):
       executable=ctx.executable._runtest)
   return [DefaultInfo(runfiles=ctx.runfiles(files=ctx.files.srcs))]
 
+
 # Common for library, testing & running.
-build_common={
+build_common = {
   "attrs": {
       "srcs": attr.label_list(allow_files=True),
       "deps": attr.label_list(),
@@ -78,7 +79,7 @@ build_common={
                              default=Label("//:runtest")),
   },
   "outputs": {"check_syntax": "%{name}.syntax.txt",
-              "execute_output": "%{name}.execute.txt"},
+              "bootstrap": "%{name}.bootstrap.txt"},
 }
 
 php_library = rule(
