@@ -1,6 +1,6 @@
 <?php
 
-namespace base\except;
+namespace base\type;
 
 use base\except\MemberAccessException;
 

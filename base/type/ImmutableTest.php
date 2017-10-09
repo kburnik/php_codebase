@@ -2,9 +2,9 @@
 
 namespace base\type;
 
-use base\except\CannotMutate;
-use base\except\CannotReadWhileUnfrozen;
 use base\except\MemberNotFound;
+use base\type\CannotMutate;
+use base\type\CannotReadWhileUnfrozen;
 use base\type\Immutable;
 use base\type\testing\BadImmutableConcept;
 use base\type\testing\ImmutableConcept;
