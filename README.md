@@ -10,6 +10,8 @@ hence the build tool should handle all the synchronization.
 We could further extend the idea to creating pull requests
 touching multiple projects at once.
 
+Note: This is still highly experimental and should not be used in production.
+
 ## Current features
 
 Build rules

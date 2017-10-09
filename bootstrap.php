@@ -24,10 +24,6 @@ foreach($argv as $arg) {
   }
 }
 
-if (in_array("--showdeps", $argv)) {
-  print_r($elements);
-}
-
 // Loader which looks at deps given via args.
 spl_autoload_register(function($class) {
   global $all_sources;

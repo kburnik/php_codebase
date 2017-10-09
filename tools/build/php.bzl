@@ -47,26 +47,17 @@ def _php_library_impl(ctx):
 
 
 def _php_test_impl(ctx):
+  _php_library_impl(ctx)
   direct_src_files = [f.path for f in ctx.files.srcs]
 
-  # TODO(kburnik): This is required by the test rule, usually we'd use the
-  # content for the phpunit command.
-  ctx.file_action(
-      output=ctx.outputs.executable,
-      content="echo 'Running test'")
-
+  # This happens during build/analyze stage?
   ctx.actions.run(
       inputs=ctx.files.srcs,
-      outputs=[ctx.outputs.test_output],
-      arguments=[ctx.outputs.test_output.path] + direct_src_files,
+      outputs=[ctx.outputs.executable],
+      arguments=[ctx.outputs.executable.path] + direct_src_files,
       progress_message="Testing %s" % ctx.label.name,
       executable=ctx.executable._runtest)
-  #return [DefaultInfo(runfiles=ctx.runfiles(files=ctx.files.srcs))]
-  trans_srcs = get_transitive_srcs(ctx.files.srcs,
-                                   ctx.attr.deps,
-                                   include_srcs=True)
-  return [PhpFiles(transitive_sources=trans_srcs)]
-
+  return [DefaultInfo(runfiles=ctx.runfiles(files=ctx.files.srcs))]
 
 php_library = rule(
   implementation=_php_library_impl,
@@ -91,10 +82,19 @@ php_test = rule(
   attrs={
       "srcs": attr.label_list(allow_files=True),
       "deps": attr.label_list(),
+      "_check_syntax": attr.label(executable=True,
+                                  cfg="host",
+                                  allow_files=True,
+                                  default=Label("//tools/build:check_syntax")),
+      "_bootstrap": attr.label(executable=True,
+                               cfg="host",
+                               allow_files=True,
+                               default=Label("//:bootstrap")),
       "_runtest": attr.label(executable=True, cfg="host",
                              allow_files=True,
                              default=Label("//:runtest")),
   },
-  outputs={"test_output": "%{name}.test.txt"},
+  outputs={"check_syntax": "%{name}.syntax.txt",
+           "execute_output": "%{name}.execute.txt"},
   test=True
 )
