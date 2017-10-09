@@ -8,7 +8,7 @@ array_shift($argv);
 array_shift($argv);
 $testfiles = $argv;
 
-$DIR = __DIR__ . "/bazel-bin";
+$DIR = ".";
 $autoload = "$DIR/autoload.php";
 
 foreach($testfiles as $testfile) {

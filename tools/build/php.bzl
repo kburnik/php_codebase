@@ -81,14 +81,14 @@ def _php_test_impl(ctx):
 
   direct_src_files = [f.path for f in ctx.files.srcs]
   ctx.actions.run(
-      inputs=ctx.files.srcs,
+      inputs=test_deps,
       outputs=[ctx.outputs.executable],
       arguments=[ctx.outputs.executable.path] + direct_src_files,
       progress_message="Testing %s" % ctx.label.name,
       executable=ctx.executable._gentest)
-  return [DefaultInfo(
-            files=test_deps,
-            runfiles=ctx.runfiles(files=[ctx.outputs.executable]))]
+  runfiles = ctx.runfiles(
+      files=[f for f in test_deps] + [ctx.outputs.executable])
+  return [DefaultInfo(runfiles=runfiles)]
 
 
 # Common for library, testing & running.
