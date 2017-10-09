@@ -59,10 +59,10 @@ def _place_files_impl(ctx):
       command="cp {src} {dest}".format(src=src.path, dest=src_copy.path))
 
   transitive_sources = get_transitive_srcs(ctx.files.srcs, ctx.attr.deps)
-  runfiles = []
+  lib_files = depset()
   if ctx.attr.bootstrap:
     lib_file = ctx.actions.declare_file(ctx.label.name + ".phplib")
-    runfiles += [lib_file]
+    lib_files += [lib_file]
     ctx.actions.run(
         inputs=outputs,
         outputs=[lib_file],
@@ -70,7 +70,7 @@ def _place_files_impl(ctx):
         progress_message="Bootstraping %s" % ctx.label.name,
         executable=ctx.executable._bootstrap)
 
-  return [DefaultInfo(files=outputs, runfiles=ctx.runfiles(files=runfiles)),
+  return [DefaultInfo(files=outputs + lib_files),
           PhpFiles(transitive_sources=transitive_sources)]
 
 

@@ -16,7 +16,7 @@ spl_autoload_register(function($class) {
   return $exists;
 });
 
-if (count($argv) > 1) {
+if (count($argv) > 1 && basename($argv[0]) == basename(__FILE__)) {
   array_shift($argv);
   foreach ($argv as $arg) {
     echo "Loading $arg\n";
