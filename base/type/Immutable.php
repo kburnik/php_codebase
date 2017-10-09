@@ -5,7 +5,7 @@ namespace base\type;
 use base\except\CannotMutate;
 use base\except\MemberNotFound;
 
-/** An immutable object. Members can only be set within the class. */
+/** An immutable object. Members can only be set once. */
 abstract class Immutable {
   private $_immutable = array();
 

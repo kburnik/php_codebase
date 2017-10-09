@@ -1,3 +1,5 @@
+# Bazel PHP build rules (php_library, php_binary, php_test, etc.).
+
 # A provider with one field, transitive_sources.
 PhpFiles = provider()
 
@@ -16,7 +18,6 @@ def get_transitive_srcs(srcs, deps, include_srcs=True):
   if include_srcs:
     trans_srcs += srcs
   return trans_srcs
-
 
 def _php_library_impl(ctx):
   # The list of arguments we pass to the script.
@@ -47,10 +48,10 @@ def _php_library_impl(ctx):
 
 
 def _php_test_impl(ctx):
+  # Build all the files required for testing first.
   _php_library_impl(ctx)
-  direct_src_files = [f.path for f in ctx.files.srcs]
 
-  # This happens during build/analyze stage?
+  direct_src_files = [f.path for f in ctx.files.srcs]
   ctx.actions.run(
       inputs=ctx.files.srcs,
       outputs=[ctx.outputs.executable],
@@ -59,9 +60,9 @@ def _php_test_impl(ctx):
       executable=ctx.executable._runtest)
   return [DefaultInfo(runfiles=ctx.runfiles(files=ctx.files.srcs))]
 
-php_library = rule(
-  implementation=_php_library_impl,
-  attrs={
+# Common for library, testing & running.
+build_common={
+  "attrs": {
       "srcs": attr.label_list(allow_files=True),
       "deps": attr.label_list(),
       "_check_syntax": attr.label(executable=True,
@@ -72,29 +73,21 @@ php_library = rule(
                               cfg="host",
                               allow_files=True,
                               default=Label("//:bootstrap")),
-  },
-  outputs={"check_syntax": "%{name}.syntax.txt",
-           "execute_output": "%{name}.execute.txt"},
-)
-
-php_test = rule(
-  implementation=_php_test_impl,
-  attrs={
-      "srcs": attr.label_list(allow_files=True),
-      "deps": attr.label_list(),
-      "_check_syntax": attr.label(executable=True,
-                                  cfg="host",
-                                  allow_files=True,
-                                  default=Label("//tools/build:check_syntax")),
-      "_bootstrap": attr.label(executable=True,
-                               cfg="host",
-                               allow_files=True,
-                               default=Label("//:bootstrap")),
       "_runtest": attr.label(executable=True, cfg="host",
                              allow_files=True,
                              default=Label("//:runtest")),
   },
-  outputs={"check_syntax": "%{name}.syntax.txt",
-           "execute_output": "%{name}.execute.txt"},
-  test=True
+  "outputs": {"check_syntax": "%{name}.syntax.txt",
+              "execute_output": "%{name}.execute.txt"},
+}
+
+php_library = rule(
+  implementation=_php_library_impl,
+  **build_common
+)
+
+php_test = rule(
+  implementation=_php_test_impl,
+  test=True,
+  **build_common
 )
