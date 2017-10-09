@@ -3,8 +3,9 @@ load("//tools/build:php.bzl", "php_library", "php_test")
 php_library(
   name="immutable",
   srcs=[
+    "CannotMutate.php",
+    "CannotReadWhileUnfrozen.php",
     "Immutable.php",
-    "CannotReadWhileUnfrozen.php"
   ],
   deps=["//base/except"],
   visibility=["//visibility:public"]

@@ -8,6 +8,7 @@ use base\type\Immutable;
  * Concept of an immutable class which does not freeze it's state as it should.
  */
 class BadImmutableConcept extends Immutable {
+  // @override
   protected function __construct($value) {
     $this->value = $value;
     // parent::__construct() is left out as if accidental. This will cause an

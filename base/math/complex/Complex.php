@@ -6,6 +6,7 @@ use base\type\Immutable;
 
 /** A complex number representation. */
 class Complex extends Immutable {
+  // @override
   protected function __construct($re = 0.0, $im = 0.0) {
     $this->re = $re;
     $this->im = $im;
