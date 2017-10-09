@@ -6,8 +6,9 @@ use base\type\Immutable;
 
 /** Concept of an immutable class. */
 class ImmutableConcept extends Immutable {
-  private function __construct($value) {
+  protected function __construct($value) {
     $this->value = $value;
+    parent::__construct();
   }
 
   public static function of($value) {

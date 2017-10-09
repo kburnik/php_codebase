@@ -3,8 +3,10 @@
 namespace base\type;
 
 use base\except\CannotMutate;
+use base\except\CannotReadWhileUnfrozen;
 use base\except\MemberNotFound;
 use base\type\Immutable;
+use base\type\testing\BadImmutableConcept;
 use base\type\testing\ImmutableConcept;
 use PHPUnit\Framework\TestCase;
 
@@ -23,5 +25,17 @@ class ImmutableTest extends TestCase {
     $this->expectException(MemberNotFound::class);
 
     ImmutableConcept::of(100)->notTheDroidsYouAreLookingFor;
+  }
+
+  public function testCannotCreateMemberExternally() {
+    $this->expectException(CannotMutate::class);
+
+    ImmutableConcept::of(100)->newValue = 200;
+  }
+
+  public function testCannotReadMemberWhileUnfrozen() {
+    $this->expectException(CannotReadWhileUnfrozen::class);
+
+    BadImmutableConcept::of(100)->value;
   }
 }

@@ -6,9 +6,10 @@ use base\type\Immutable;
 
 /** A complex number representation. */
 class Complex extends Immutable {
-  private function __construct($re = 0.0, $im = 0.0) {
+  protected function __construct($re = 0.0, $im = 0.0) {
     $this->re = $re;
     $this->im = $im;
+    parent::__construct();
   }
 
   public static function of($re = 0.0, $im = 0.0) {
