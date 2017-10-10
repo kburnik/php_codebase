@@ -83,6 +83,9 @@ we also produce an executable file which runs all the test cases.
 
 ## TODO
 
+Removing a required dependency does not break the build if it was somehow
+previously built.
+
 Check that dependencies are actually used, i.e. need a build cleaner.
 
 Devise a way to automatically add dependencies based on PHP use statements.
