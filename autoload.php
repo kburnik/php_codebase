@@ -3,22 +3,22 @@
 
 require_once(__DIR__ . "/vendor/autoload.php");
 
-$deps_list = null;
+$deps_map = null;
 $target = null;
 
 spl_autoload_register(function($class) {
-  global $deps_list;
+  global $deps_map;
   global $target;
 
   $classFilePath = str_replace("\\", "/", $class) . ".php";
 
-  $exists = $deps_list === null &&
+  $exists = $deps_map === null &&
             file_exists(__DIR__ . "/" . $classFilePath) ||
-            in_array($classFilePath, $deps_list);
+            array_key_exists($classFilePath, $deps_map);
 
   if ($exists) {
     require_once(__DIR__ . "/" . $classFilePath);
-  } else if ($deps_list !== null) {
+  } else if ($deps_map !== null) {
     throw new Exception(
         "Dependency to {$classFilePath} missing for target {$target}.");
   }
@@ -45,7 +45,7 @@ if (count($argv) > 1 && basename($argv[0]) == basename(__FILE__)) {
   }
 
   $opts = parse_args($argv);
-  $deps_list = $opts['dep'];
+  $deps_map = array_flip($opts['dep']);
   $target = $opts['target'][0];
   foreach ($opts['src'] as $src) {
     try {
