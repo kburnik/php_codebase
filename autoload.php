@@ -1,24 +1,24 @@
-#!/usr/bin/env php
 <?php
 
 require_once(__DIR__ . "/vendor/autoload.php");
 
-$deps_list = null;
+$depsMap = null;
 $target = null;
 
 spl_autoload_register(function($class) {
-  global $deps_list;
+  global $depsMap;
   global $target;
 
   $classFilePath = str_replace("\\", "/", $class) . ".php";
 
-  $exists = $deps_list === null &&
-            file_exists(__DIR__ . "/" . $classFilePath) ||
-            in_array($classFilePath, $deps_list);
+  $exists = ($depsMap === null &&
+             file_exists(__DIR__ . "/" . $classFilePath)) ||
+            ($depsMap !== null &&
+             array_key_exists($classFilePath, $depsMap));
 
   if ($exists) {
     require_once(__DIR__ . "/" . $classFilePath);
-  } else if ($deps_list !== null) {
+  } else if ($depsMap !== null) {
     throw new Exception(
         "Dependency to {$classFilePath} missing for target {$target}.");
   }
@@ -27,7 +27,8 @@ spl_autoload_register(function($class) {
 });
 
 if (count($argv) > 1 && basename($argv[0]) == basename(__FILE__)) {
-  function parse_args($arguments) {
+  print_r($argv);
+  function parseArgs($arguments) {
     $arguments[] = "--";
     $opts = array();
     $state = "";
@@ -44,8 +45,8 @@ if (count($argv) > 1 && basename($argv[0]) == basename(__FILE__)) {
     return $opts;
   }
 
-  $opts = parse_args($argv);
-  $deps_list = $opts['dep'];
+  $opts = parseArgs($argv);
+  $depsMap = array_flip($opts['dep']);
   $target = $opts['target'][0];
   foreach ($opts['src'] as $src) {
     try {

@@ -66,6 +66,23 @@ def _php_test_impl(ctx):
   return [DefaultInfo(runfiles=runfiles)]
 
 
+def _php_executable_impl(ctx):
+  # Build all the files required for testing first.
+  res = _build_lib_impl(ctx)
+  exe_deps = res[0].files
+
+  direct_src_files = [f.path for f in ctx.files.srcs]
+  ctx.actions.run(
+      inputs=exe_deps,
+      outputs=[ctx.outputs.executable],
+      arguments=[ctx.outputs.executable.path] + direct_src_files,
+      progress_message="Running %s" % ctx.label.name,
+      executable=ctx.executable._genexe)
+  runfiles = ctx.runfiles(files=[ctx.outputs.executable] + list(exe_deps))
+  return [DefaultInfo(runfiles=runfiles)]
+
+
+
 # Common for library, testing & running.
 build_common = {
   "attrs": {
@@ -77,6 +94,9 @@ build_common = {
                                cfg="host",
                                allow_files=True,
                                default=Label("//:build_lib")),
+      "_genexe": attr.label(executable=True, cfg="host",
+                            allow_files=True,
+                            default=Label("//:genexe")),
       "_gentest": attr.label(executable=True, cfg="host",
                              allow_files=True,
                              default=Label("//:gentest")),
@@ -85,6 +105,12 @@ build_common = {
 
 _build_lib_rule = rule(
   implementation=_build_lib_impl,
+  **build_common
+)
+
+_php_executable_rule = rule(
+  implementation=_php_executable_impl,
+  executable=True,
   **build_common
 )
 
@@ -99,6 +125,12 @@ def php_library(**kwargs):
   if kwargs['name'] != 'autoload':
     kwargs['deps'] += ['//:autoload']
   _build_lib_rule(**kwargs)
+
+
+def php_executable(**kwargs):
+  if kwargs['name'] != 'autoload':
+    kwargs['deps'] += ['//:autoload']
+  _php_executable_rule(**kwargs)
 
 
 def php_test(**kwargs):
