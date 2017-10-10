@@ -83,8 +83,7 @@ we also produce an executable file which runs all the test cases.
 
 ## TODO
 
-Removing a required dependency does not break the build if it was somehow
-previously built.
+Building seems to be slow, probably doing extra work which is not required.
 
 Check that dependencies are actually used, i.e. need a build cleaner.
 
