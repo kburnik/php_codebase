@@ -27,7 +27,6 @@ spl_autoload_register(function($class) {
 });
 
 if (count($argv) > 1 && basename($argv[0]) == basename(__FILE__)) {
-  print_r($argv);
   function parseArgs($arguments) {
     $arguments[] = "--";
     $opts = array();
