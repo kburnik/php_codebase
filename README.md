@@ -83,7 +83,8 @@ we also produce an executable file which runs all the test cases.
 
 ## TODO
 
-Building seems to be slow, probably doing extra work which is not required.
+php_executable and php_test don't realize when a dependency is missing, they
+should also be bootstrapped.
 
 Check that dependencies are actually used, i.e. need a build cleaner.
 
