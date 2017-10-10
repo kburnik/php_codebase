@@ -11,6 +11,7 @@ $testfiles = $argv;
 $DIR = ".";
 $autoload = "$DIR/autoload.php";
 
+echo "Generating test\n";
 foreach($testfiles as $testfile) {
   $flags="--report-useless-tests";
   file_put_contents(

@@ -11,5 +11,7 @@ php_executable(
 php_test(
   name="calc_test",
   srcs=["CalcTest.php"],
-  deps=[":calc"],
+  deps=[
+    ":calc"
+  ],
 )
