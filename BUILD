@@ -1,14 +1,15 @@
 load("//tools/build:php.bzl", "php_library")
 
 sh_binary(
-  name="bootstrap",
-  srcs=["bootstrap.php"],
+  name="gentest",
+  srcs=["gentest.php"],
   visibility=["//visibility:public"]
 )
 
+
 sh_binary(
-  name="gentest",
-  srcs=["gentest.php"],
+  name="build_lib",
+  srcs=["build_lib.php"],
   visibility=["//visibility:public"]
 )
 
