@@ -26,6 +26,8 @@ filegroup(
   name="vendor_phpunit_files",
   srcs=glob(include=["vendor/**"],
             exclude=[
+              "vendor/autoload.php",
+              "vendor/composer/**",
               "vendor/phpunit/php-token-stream/tests/**",
               "vendor/phpunit/phpunit-mock-objects/tests/**",
               "vendor/phpunit/phpunit/tests/**",

@@ -48,7 +48,7 @@ def _build_lib_impl(ctx):
       progress_message="Building lib %s" % ctx.label.name,
       executable=ctx.executable._build_lib)
 
-  return [DefaultInfo(files=lib_outputs)]
+  return [DefaultInfo(files=lib_outputs + deps_src_files)]
 
 def _php_test_impl(ctx):
   # Build all the files required for testing first.
@@ -62,8 +62,7 @@ def _php_test_impl(ctx):
       arguments=[ctx.outputs.executable.path] + direct_src_files,
       progress_message="Testing %s" % ctx.label.name,
       executable=ctx.executable._gentest)
-  runfiles = ctx.runfiles(
-      files=[f for f in test_deps] + [ctx.outputs.executable])
+  runfiles = ctx.runfiles(files=[ctx.outputs.executable] + list(test_deps))
   return [DefaultInfo(runfiles=runfiles)]
 
 
