@@ -23,10 +23,6 @@ def get_transitive_srcs(srcs, deps, include_srcs=True):
 def _place_files_impl(ctx):
   # The list of arguments we pass to the script.
   direct_src_files = [f.path for f in ctx.files.srcs]
-  transitive_src_files = \
-      [f.path for f in get_transitive_srcs(ctx.files.srcs, ctx.attr.deps,
-                                           include_srcs=False)]
-  syntax_check_result = ctx.actions.declare_file("_syntax." + ctx.label.name)
 
   # Filter to php files for syntax checking.
   php_files = []
@@ -34,6 +30,10 @@ def _place_files_impl(ctx):
     if file.endswith('.php'):
       php_files.append(file)
 
+  outputs = depset()
+
+  syntax_check_result = ctx.actions.declare_file("_syntax." + ctx.label.name)
+  outputs += [syntax_check_result]
   ctx.actions.run(
     inputs=ctx.files.srcs,
     outputs=[syntax_check_result],
@@ -41,17 +41,14 @@ def _place_files_impl(ctx):
     progress_message="Checking PHP syntax of %s" % ctx.label.name,
     executable=ctx.executable._check_syntax)
 
-  outputs = depset()
+  # Add dependencies to output.
   for dep in ctx.attr.deps:
     outputs += dep[DefaultInfo].files
 
-  src_copies = depset()
-  outputs += [syntax_check_result]
   for src in ctx.files.srcs:
     src_copy = ctx.actions.declare_file(
         src.path if ctx.attr.recursive else src.basename)
-    src_copies += [src_copy]
-    outputs += [src_copy, syntax_check_result]
+    outputs += [src_copy]
     ctx.actions.run_shell(
       outputs=[src_copy],
       inputs=[src],
