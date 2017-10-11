@@ -18,13 +18,16 @@ def _build_impl(ctx):
 
   bootstrap = []
   if ctx.attr.bootstrap:
-    lib_outputs += [ctx.actions.declare_file(ctx.label.name)]
     bootstrap = ["--bootstrap"]
+
+  if ctx.attr.type != "library":
+    lib_outputs += [ctx.outputs.executable]
 
   ctx.actions.run(
       inputs=ctx.files.srcs + list(deps_src_files),
       outputs=list(lib_outputs),
-      arguments=["--out", out_dir] +
+      arguments=["--type", ctx.attr.type] +
+                ["--out", out_dir] +
                 ["--src"] + direct_src_files +
                 ["--dep"] + [f.short_path for f in deps_src_files] +
                 ["--target", ctx.label.name] +
@@ -32,7 +35,12 @@ def _build_impl(ctx):
       progress_message="Building lib %s" % ctx.label.name,
       executable=ctx.executable._build)
 
-  return [DefaultInfo(files=lib_outputs + deps_src_files)]
+  if ctx.attr.type == "library":
+    return [DefaultInfo(files=lib_outputs + deps_src_files)]
+  else:
+    runfiles = ctx.runfiles(
+        files=[ctx.outputs.executable] + list(lib_outputs + deps_src_files))
+    return [DefaultInfo(runfiles=runfiles)]
 
 
 def _php_test_impl(ctx):
@@ -52,25 +60,7 @@ def _php_test_impl(ctx):
 
 
 def _php_executable_impl(ctx):
-  # Build all the files required for executing first.
-  res = _build_impl(ctx)
-  exe_deps = res[0].files
-
-  direct_src_files = [f.path for f in ctx.files.srcs]
-  if len(direct_src_files) != 1:
-    fail("Executable target must have exactly one source file.")
-
-  ctx.actions.run(
-      inputs=exe_deps,
-      outputs=[ctx.outputs.executable],
-      arguments=[ctx.outputs.executable.path] +
-                direct_src_files +
-                [f.short_path for f in exe_deps],
-      progress_message="Running %s" % ctx.label.name,
-      executable=ctx.executable._genexe)
-  runfiles = ctx.runfiles(files=[ctx.outputs.executable] + list(exe_deps))
-  return [DefaultInfo(runfiles=runfiles, files=depset(exe_deps))]
-
+  return _build_impl(ctx)
 
 # Common for library, testing & running.
 build_common = {
@@ -79,16 +69,11 @@ build_common = {
       "deps": attr.label_list(allow_files=False),
       "recursive": attr.bool(default=False),
       "bootstrap": attr.bool(default=True),
+      "type": attr.string(default="library"),
       "_build": attr.label(executable=True,
-                               cfg="host",
-                               allow_files=True,
-                               default=Label("//tools/build:build")),
-      "_genexe": attr.label(executable=True, cfg="host",
-                            allow_files=True,
-                            default=Label("//:genexe")),
-      "_gentest": attr.label(executable=True, cfg="host",
-                             allow_files=True,
-                             default=Label("//:gentest")),
+                           cfg="host",
+                           allow_files=True,
+                           default=Label("//tools/build:build")),
   },
 }
 
@@ -116,16 +101,21 @@ _php_test = rule(
 def php_library(**kwargs):
   if kwargs['name'] != 'autoload':
     kwargs['deps'] += ['//:autoload']
+  kwargs['type'] = "library";
   _build_rule(**kwargs)
 
 
 def php_executable(**kwargs):
   if kwargs['name'] != 'autoload':
     kwargs['deps'] += ['//:autoload']
+  kwargs['type'] = "executable"
+  kwargs['bootstrap'] = True
   _php_executable_rule(**kwargs)
 
 
 def php_test(**kwargs):
   kwargs['deps'] += ['//:autoload', '//:vendor_phpunit']
+  kwargs['type'] = "test";
+  kwargs['bootstrap'] = True
   _php_test(**kwargs)
 
