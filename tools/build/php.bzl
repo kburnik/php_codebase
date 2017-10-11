@@ -3,10 +3,12 @@
 def _build_impl(ctx):
   direct_src_files = [f.path for f in ctx.files.srcs]
 
-  # List dependencies
+  # Traverse dependencies, the dep files for the current target.
   deps_src_files = depset()
   for dep in ctx.attr.deps:
     deps_src_files += dep[DefaultInfo].files
+    if hasattr(dep[DefaultInfo], 'files_to_run'):
+      deps_src_files += dep[DefaultInfo].default_runfiles.files
 
   lib_outputs = depset()
   out_dir = ""
@@ -41,7 +43,6 @@ def _build_impl(ctx):
     runfiles = ctx.runfiles(
         files=[ctx.outputs.executable] + list(lib_outputs + deps_src_files))
     return [DefaultInfo(runfiles=runfiles)]
-
 
 # Common for library, testing & running.
 build_common = {

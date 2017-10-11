@@ -16,7 +16,7 @@ spl_autoload_register(function($class) {
     throw new Exception(
         "Attempted to load $classFilePath which is not listed as a " .
         "dependency to the {namespace}\{class}. Have you included it to the " .
-        "target\'s dependencies?");
+        "target's dependencies?");
   } else if (!$isWhiteListed && !$isOnFileSystem) {
     return false;
   } else if ($isWhiteListed && !$isOnFileSystem) {
