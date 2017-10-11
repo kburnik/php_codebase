@@ -1,7 +1,7 @@
 load("//tools/build:php.bzl", "php_library")
 
 php_library(
-  name="autoload",
+  name="vendor_autoload",
   srcs=glob(["vendor/autoload.php", "vendor/composer/**"]),
   deps=[],
   recursive=True,

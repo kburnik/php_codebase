@@ -2,6 +2,8 @@
 
 namespace tools\build;
 
+use \Exception;
+
 /** Generic parsed command line options. */
 class Options {
   private $options;
