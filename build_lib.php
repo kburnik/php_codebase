@@ -123,6 +123,7 @@ function main($arguments) {
     bootstrap("$out_dir/autoload.php", $php_files, $deps, $target);
     echo "Successfully bootstrapped target {$target}.\n";
   }
+
 }
 
 try {

@@ -1,25 +1,5 @@
 # Bazel PHP build rules (php_library, php_binary, php_test, etc.).
 
-# A provider with one field, transitive_sources.
-PhpFiles = provider()
-
-def get_transitive_srcs(srcs, deps, include_srcs=True):
-  """Obtain the source files for a target and its transitive dependencies.
-
-  Args:
-    srcs: a list of source files
-    deps: a list of targets that are direct dependencies
-  Returns:
-    a collection of the transitive sources
-  """
-  trans_srcs = depset()
-  for dep in deps:
-    trans_srcs += dep[PhpFiles].transitive_sources
-  if include_srcs:
-    trans_srcs += srcs
-  return trans_srcs
-
-
 def _build_lib_impl(ctx):
   direct_src_files = [f.path for f in ctx.files.srcs]
 
@@ -50,6 +30,7 @@ def _build_lib_impl(ctx):
 
   return [DefaultInfo(files=lib_outputs + deps_src_files)]
 
+
 def _php_test_impl(ctx):
   # Build all the files required for testing first.
   res = _build_lib_impl(ctx)
@@ -67,7 +48,7 @@ def _php_test_impl(ctx):
 
 
 def _php_executable_impl(ctx):
-  # Build all the files required for testing first.
+  # Build all the files required for executing first.
   res = _build_lib_impl(ctx)
   exe_deps = res[0].files
 
@@ -79,8 +60,7 @@ def _php_executable_impl(ctx):
       progress_message="Running %s" % ctx.label.name,
       executable=ctx.executable._genexe)
   runfiles = ctx.runfiles(files=[ctx.outputs.executable] + list(exe_deps))
-  return [DefaultInfo(runfiles=runfiles)]
-
+  return [DefaultInfo(runfiles=runfiles, files=depset(exe_deps))]
 
 
 # Common for library, testing & running.
@@ -103,16 +83,19 @@ build_common = {
   },
 }
 
+
 _build_lib_rule = rule(
   implementation=_build_lib_impl,
   **build_common
 )
+
 
 _php_executable_rule = rule(
   implementation=_php_executable_impl,
   executable=True,
   **build_common
 )
+
 
 _php_test = rule(
   implementation=_php_test_impl,

@@ -26,24 +26,25 @@ spl_autoload_register(function($class) {
   return $exists;
 });
 
-if (count($argv) > 1 && basename($argv[0]) == basename(__FILE__)) {
-  function parseArgs($arguments) {
-    $arguments[] = "--";
-    $opts = array();
-    $state = "";
-    foreach ($arguments as $arg) {
-      if (substr($arg, 0, 2) == "--") {
-        $state = substr($arg, 2);
-        if ($state != "" && !array_key_exists($state, $opts)) {
-          $opts[$state] = array();
-        }
-      } else if ($state != "") {
-        $opts[$state][] = $arg;
+function parseArgs($arguments) {
+  $arguments[] = "--";
+  $opts = array();
+  $state = "";
+  foreach ($arguments as $arg) {
+    if (substr($arg, 0, 2) == "--") {
+      $state = substr($arg, 2);
+      if ($state != "" && !array_key_exists($state, $opts)) {
+        $opts[$state] = array();
       }
+    } else if ($state != "") {
+      $opts[$state][] = $arg;
     }
-    return $opts;
   }
+  return $opts;
+}
 
+
+if (count($argv) > 1 && basename($argv[0]) == basename(__FILE__)) {
   $opts = parseArgs($argv);
   $depsMap = array_flip($opts['dep']);
   $target = $opts['target'][0];
