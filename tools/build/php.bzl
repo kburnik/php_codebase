@@ -1,6 +1,6 @@
 # Bazel PHP build rules (php_library, php_binary, php_test, etc.).
 
-def _build_lib_impl(ctx):
+def _build_impl(ctx):
   direct_src_files = [f.path for f in ctx.files.srcs]
 
   # List dependencies
@@ -16,7 +16,11 @@ def _build_lib_impl(ctx):
     lib_outputs += [out_file]
     out_dir = out_file.root.path
 
-  bootstrap = ["--bootstrap"] if ctx.attr.bootstrap else []
+  bootstrap = []
+  if ctx.attr.bootstrap:
+    lib_outputs += [ctx.actions.declare_file(ctx.label.name)]
+    bootstrap = ["--bootstrap"]
+
   ctx.actions.run(
       inputs=ctx.files.srcs + list(deps_src_files),
       outputs=list(lib_outputs),
@@ -26,14 +30,14 @@ def _build_lib_impl(ctx):
                 ["--target", ctx.label.name] +
                 bootstrap,
       progress_message="Building lib %s" % ctx.label.name,
-      executable=ctx.executable._build_lib)
+      executable=ctx.executable._build)
 
   return [DefaultInfo(files=lib_outputs + deps_src_files)]
 
 
 def _php_test_impl(ctx):
   # Build all the files required for testing first.
-  res = _build_lib_impl(ctx)
+  res = _build_impl(ctx)
   test_deps = res[0].files
 
   direct_src_files = [f.path for f in ctx.files.srcs]
@@ -49,14 +53,19 @@ def _php_test_impl(ctx):
 
 def _php_executable_impl(ctx):
   # Build all the files required for executing first.
-  res = _build_lib_impl(ctx)
+  res = _build_impl(ctx)
   exe_deps = res[0].files
 
   direct_src_files = [f.path for f in ctx.files.srcs]
+  if len(direct_src_files) != 1:
+    fail("Executable target must have exactly one source file.")
+
   ctx.actions.run(
       inputs=exe_deps,
       outputs=[ctx.outputs.executable],
-      arguments=[ctx.outputs.executable.path] + direct_src_files,
+      arguments=[ctx.outputs.executable.path] +
+                direct_src_files +
+                [f.short_path for f in exe_deps],
       progress_message="Running %s" % ctx.label.name,
       executable=ctx.executable._genexe)
   runfiles = ctx.runfiles(files=[ctx.outputs.executable] + list(exe_deps))
@@ -70,10 +79,10 @@ build_common = {
       "deps": attr.label_list(allow_files=False),
       "recursive": attr.bool(default=False),
       "bootstrap": attr.bool(default=True),
-      "_build_lib": attr.label(executable=True,
+      "_build": attr.label(executable=True,
                                cfg="host",
                                allow_files=True,
-                               default=Label("//:build_lib")),
+                               default=Label("//tools/build:build")),
       "_genexe": attr.label(executable=True, cfg="host",
                             allow_files=True,
                             default=Label("//:genexe")),
@@ -84,8 +93,8 @@ build_common = {
 }
 
 
-_build_lib_rule = rule(
-  implementation=_build_lib_impl,
+_build_rule = rule(
+  implementation=_build_impl,
   **build_common
 )
 
@@ -107,7 +116,7 @@ _php_test = rule(
 def php_library(**kwargs):
   if kwargs['name'] != 'autoload':
     kwargs['deps'] += ['//:autoload']
-  _build_lib_rule(**kwargs)
+  _build_rule(**kwargs)
 
 
 def php_executable(**kwargs):

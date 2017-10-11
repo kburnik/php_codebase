@@ -17,12 +17,13 @@ sh_binary(
 sh_binary(
   name="genexe",
   srcs=["genexe.php"],
+  data=["autoload_template.php"],
   visibility=["//visibility:public"]
 )
 
 php_library(
   name="autoload",
-  srcs=["autoload.php", "vendor/autoload.php"] + glob(["vendor/composer/**"]),
+  srcs=["vendor/autoload.php"] + glob(["vendor/composer/**"]),
   deps=[],
   recursive=True,
   bootstrap=False,
