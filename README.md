@@ -65,7 +65,7 @@ directory, preserving the path structure and not modifying any code.
 
 A PHP executable is a single script file which executes PHP code, meaning it
 takes inputs and produces outputs. An executable may depend on PHP libraries.
-The main file should have a `function main($argv) {}` and this is considered
+The main file should have a `function main($args) {}` and this is considered
 the entry point method.
 
 Building an executable is achieved through copying the executable source files,
@@ -81,9 +81,39 @@ test usually depends at least on one library or an executable.
 To build a PHP test is similar as to building a library, the main difference is
 we also produce an executable file which runs all the test cases.
 
+
+## Bootstrapping
+
+Bootstrapping a PHP target is like doing a dry-run on the source code, which
+implies loading all the sources to try and find dependency issues before actual
+runtime.
+
+One problem with PHP is that it will happily allow you to have symbols like
+classes, interfaces, traits, functions, etc. in the code and won't complain if
+any of them are not declared until execution reaches them.
+
+For example, if you run a php_test and then afterwards remove the dependency to
+the tested production code, rebuild and rerun the test, it will pass. However,
+if you run `bazel clean` and run the test again, it will fail because the
+required class you're testing can't be loaded (it was not built).
+
+Note that bazel will bootstrap the test target when you remove the required
+dependency and won't find problems during the test execution as the files have
+already been placed by a previous build, hence autoload will find and load them.
+
+This is not how a build should work, it should be hermetic and reproducible,
+however bazel won't remove a previously built target only due to it being
+removed as a dependency.
+
+Once you remove the required dependency, the test should always fail. This can
+be achieved if we have an autoload function with whitelisted sources. Therefore
+the bootstrapping phase should produce this whitelist from passed dependencies
+on each build. The same applies for an executable.
+
 ## TODO
 
-Building seems to be slow, probably doing extra work which is not required.
+php_executable and php_test don't realize when a dependency is missing, they
+should also be bootstrapped properly.
 
 Check that dependencies are actually used, i.e. need a build cleaner.
 

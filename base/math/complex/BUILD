@@ -6,6 +6,7 @@ php_library(
   deps=[
     "//base/type:immutable",
   ],
+  visibility=["//visibility:public"]
 )
 
 php_test(

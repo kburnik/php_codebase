@@ -1,5 +1,6 @@
 load("//tools/build:php.bzl", "php_library")
 
+
 sh_binary(
   name="gentest",
   srcs=["gentest.php"],
@@ -10,6 +11,12 @@ sh_binary(
 sh_binary(
   name="build_lib",
   srcs=["build_lib.php"],
+  visibility=["//visibility:public"]
+)
+
+sh_binary(
+  name="genexe",
+  srcs=["genexe.php"],
   visibility=["//visibility:public"]
 )
 
