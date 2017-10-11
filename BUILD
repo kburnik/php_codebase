@@ -1,29 +1,8 @@
 load("//tools/build:php.bzl", "php_library")
 
-
-sh_binary(
-  name="gentest",
-  srcs=["gentest.php"],
-  visibility=["//visibility:public"]
-)
-
-
-sh_binary(
-  name="build_lib",
-  srcs=["build_lib.php"],
-  visibility=["//visibility:public"]
-)
-
-sh_binary(
-  name="genexe",
-  srcs=["genexe.php"],
-  data=["autoload_template.php"],
-  visibility=["//visibility:public"]
-)
-
 php_library(
   name="autoload",
-  srcs=["vendor/autoload.php"] + glob(["vendor/composer/**"]),
+  srcs=glob(["vendor/autoload.php", "vendor/composer/**"]),
   deps=[],
   recursive=True,
   bootstrap=False,
