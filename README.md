@@ -88,32 +88,22 @@ Bootstrapping a PHP target is like doing a dry-run on the source code, which
 implies loading all the sources to try and find dependency issues before actual
 runtime.
 
-One problem with PHP is that it will happily allow you to have symbols like
-classes, interfaces, traits, functions, etc. in the code and won't complain if
-any of them are not declared until execution reaches them.
+This is achieved by generating an autoload function with whitelisted sources as
+bazel does not remove files of a built target if you remove a dependency to it
+from another target. This holds for php_library, php_executable and php_test.
 
-For example, if you run a php_test and then afterwards remove the dependency to
-the tested production code, rebuild and rerun the test, it will pass. However,
-if you run `bazel clean` and run the test again, it will fail because the
-required class you're testing can't be loaded (it was not built).
+When building a library, the source files are only loaded as to find any issue
+in static references outside scoped code (e.g. outside classes, such as an
+extended class). This ensures that if we, for example extend a class from an
+external dependency, that the base class can be autoloaded (i.e. is
+whitelisted).
 
-Note that bazel will bootstrap the test target when you remove the required
-dependency and won't find problems during the test execution as the files have
-already been placed by a previous build, hence autoload will find and load them.
-
-This is not how a build should work, it should be hermetic and reproducible,
-however bazel won't remove a previously built target only due to it being
-removed as a dependency.
-
-Once you remove the required dependency, the test should always fail. This can
-be achieved if we have an autoload function with whitelisted sources. Therefore
-the bootstrapping phase should produce this whitelist from passed dependencies
-on each build. The same applies for an executable.
+For executables and tests, the bootstrap process is the same and the autoload
+function generated for the executable script or test runner also has whitelisted
+sources. The only difference is we also generate the code to achieve the
+runtime: invoking tests or running the main().
 
 ## TODO
-
-php_executable and php_test don't realize when a dependency is missing, they
-should also be bootstrapped properly.
 
 Check that dependencies are actually used, i.e. need a build cleaner.
 
