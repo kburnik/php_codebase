@@ -43,25 +43,6 @@ def _build_impl(ctx):
     return [DefaultInfo(runfiles=runfiles)]
 
 
-def _php_test_impl(ctx):
-  # Build all the files required for testing first.
-  res = _build_impl(ctx)
-  test_deps = res[0].files
-
-  direct_src_files = [f.path for f in ctx.files.srcs]
-  ctx.actions.run(
-      inputs=test_deps,
-      outputs=[ctx.outputs.executable],
-      arguments=[ctx.outputs.executable.path] + direct_src_files,
-      progress_message="Testing %s" % ctx.label.name,
-      executable=ctx.executable._gentest)
-  runfiles = ctx.runfiles(files=[ctx.outputs.executable] + list(test_deps))
-  return [DefaultInfo(runfiles=runfiles)]
-
-
-def _php_executable_impl(ctx):
-  return _build_impl(ctx)
-
 # Common for library, testing & running.
 build_common = {
   "attrs": {
@@ -77,22 +58,19 @@ build_common = {
   },
 }
 
-
 _build_rule = rule(
   implementation=_build_impl,
   **build_common
 )
 
-
 _php_executable_rule = rule(
-  implementation=_php_executable_impl,
+  implementation=_build_impl,
   executable=True,
   **build_common
 )
 
-
 _php_test = rule(
-  implementation=_php_test_impl,
+  implementation=_build_impl,
   test=True,
   **build_common
 )
