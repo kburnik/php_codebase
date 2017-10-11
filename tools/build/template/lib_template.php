@@ -1,5 +1,5 @@
 <?php
-# Bootstrapping of library {target}.
+# Geneerated bootstrapper for library {target}.
 
 $srcs = {srcs};
 foreach ($srcs as $src) {

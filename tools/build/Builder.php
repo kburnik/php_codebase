@@ -67,7 +67,7 @@ class Builder {
     $out = "";
     foreach ($templates as $i => $tpl) {
       $contents =
-          strtr(file_get_contents(__DIR__ . "/$tpl"), $replacements);
+          strtr(file_get_contents(__DIR__ . "/template/$tpl"), $replacements);
       if ($i > 0) {
         $contents = str_replace('<?php', '', $contents);
       }

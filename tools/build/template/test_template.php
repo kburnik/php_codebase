@@ -1,5 +1,5 @@
 <?php
-# Tests for target {target}.
+# Generated test runner for target {target}.
 
 $command = new PHPUnit_TextUI_Command;
 
