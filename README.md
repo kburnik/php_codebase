@@ -25,6 +25,8 @@ Unit testing with PHPUnit
 
 Working with PHP 5.6.
 
+Install docker.
+
 Install bazel.
 
 Install in root of codebase:
