@@ -1,5 +1,11 @@
 # Bazel PHP build rules (php_library, php_executable, php_test, etc.).
 
+load(
+    "@io_bazel_rules_docker//lang:image.bzl",
+    "dep_layer",
+    "app_layer",
+)
+
 def _build_impl(ctx):
   direct_src_files = [f.path for f in ctx.files.srcs]
 
@@ -95,3 +101,25 @@ def php_test(**kwargs):
   kwargs['bootstrap'] = True
   _php_test(**kwargs)
 
+
+def php_image(name, base=None, deps=[], layers=[], **kwargs):
+  """Constructs a container image wrapping a php_executable target.
+  Args:
+    layers: Augments "deps" with dependencies that should be put into
+           their own layers.
+    **kwargs: See php_executable.
+  """
+  DEFAULT_BASE = "@php56_base//image"
+  binary_name = name + "_img_bin"
+
+  php_executable(name=binary_name, deps=deps + layers, **kwargs)
+
+  index = 0
+  base = base or DEFAULT_BASE
+  for dep in layers:
+    this_name = "%s.%d" % (name, index)
+    dep_layer(name=this_name, base=base, dep=dep)
+    base = this_name
+    index += 1
+
+  app_layer(name=name, base=base, binary=binary_name, layers=layers)

@@ -1,4 +1,5 @@
-load("//tools/build:php.bzl", "php_executable", "php_test")
+load("//tools/build:php.bzl", "php_executable", "php_test", "php_image")
+load("@io_bazel_rules_docker//container:image.bzl", "container_image")
 
 php_executable(
   name="calc",
@@ -14,4 +15,15 @@ php_test(
   deps=[
     ":calc"
   ],
+)
+
+filegroup(name="calc_files", srcs=[":calc"])
+
+php_image(
+  name="calc_img",
+  srcs=["Calc.php"],
+  deps=[
+    "//base/math/complex:complex"
+  ],
+  # cmd="find 2>/dev/null | grep -e calc -e Calc"
 )
