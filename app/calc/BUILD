@@ -1,7 +1,7 @@
-load("//tools/build:php.bzl", "php_executable", "php_test", "php_image")
+load("//tools/build:php.bzl", "php_binary", "php_test", "php_image")
 load("@io_bazel_rules_docker//container:image.bzl", "container_image")
 
-php_executable(
+php_binary(
   name="calc",
   srcs=["Calc.php"],
   deps=[

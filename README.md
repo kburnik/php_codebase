@@ -1,41 +1,48 @@
-# Codebase example
+# Bazel based PHP codebase
 
-Attempt of building a unified codebase for a company.
-The main tool is bazel which allows for specififying
-software modules such as libraries and their dependencies.
+This project is a work in progress which builds on the bazel's philosophy of
+reproducible builds, targeting PHP. Bazel, used with these PHP build rules
+provides several advantages:
 
-A project may live in it's own source code repository
-hence the build tool should handle all the synchronization.
+1. Allows specifying encapsulated targets. E.g. a small PHP library with a few
+   source files.
+2. Binds code modules through specified dependencies. You don't have to care
+   about `include` or `require`, only the `use` keyword for `namespace`s and
+   class autoloading. Bootstrapping the libraries should take care of the rest.
+3. Only affected targets get rebuilt. You don't have to run the entire test
+   suite on each change, only the files which can actually be affected, provided
+   you don't break the target encapsulation. Bazel does this out of the box.
+4. Easy packaging for production. Build docker images with simple rules.
 
-We could further extend the idea to creating pull requests
-touching multiple projects at once.
-
-Note: This is still highly experimental and should not be used in production.
+**Note:** This is still highly experimental and should not be used in
+production.
 
 ## Current features
 
 Build rules
 
-* PHP library
-* PHP test
+* php_library - a set of PHP files which are checked and bootstrapped
+* php_test - same as library, with an extra test runner executable named by the
+  target
+* php_executable - same as library, with an extra entry point named by the
+  target
+* php_image - same as executable, but as a docker image instead.
 
-Unit testing with PHPUnit
+Workspace rules
+
+* composer_php_library - simple wrapper for fetching a composer library and
+  placing the vendor directory into {project_root}/external/{target_name}, you
+  can simply reference this as a dependency, see the phpunit target as example.
+
+Unit testing is performed with PHPUnit.
 
 ## Setup instructions
 
-Working with PHP 5.6.
+* Install bazel
 
-Install docker.
+* Install docker if you want to build images
 
-Install bazel.
-
-Install in root of codebase:
-
-`composer require --dev phpunit/phpunit`
-
-Add to path (if want to run):
-
-`PATH=$PATH:$HOME/codebase/vendor/bin`
+Working with PHP 5.6. Planning to add support for PHP 7.0, 7.1
 
 ## Concepts and terminology
 

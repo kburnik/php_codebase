@@ -1,4 +1,4 @@
-# Bazel PHP build rules (php_library, php_executable, php_test, etc.).
+# Bazel PHP build rules (php_library, php_binary, php_test, etc.).
 
 load(
     "@io_bazel_rules_docker//lang:image.bzl",
@@ -67,7 +67,7 @@ _build_rule = rule(
   **build_common
 )
 
-_php_executable_rule = rule(
+_php_binary_rule = rule(
   implementation=_build_impl,
   executable=True,
   **build_common
@@ -81,38 +81,34 @@ _php_test = rule(
 
 
 def php_library(**kwargs):
-  if kwargs['name'] != 'vendor_autoload':
-    kwargs['deps'] += ['//:vendor_autoload']
   kwargs['type'] = "library";
   _build_rule(**kwargs)
 
 
-def php_executable(**kwargs):
-  if kwargs['name'] != 'vendor_autoload':
-    kwargs['deps'] += ['//:vendor_autoload']
-  kwargs['type'] = "executable"
+def php_binary(**kwargs):
+  kwargs['type'] = "binary"
   kwargs['bootstrap'] = True
-  _php_executable_rule(**kwargs)
+  _php_binary_rule(**kwargs)
 
 
 def php_test(**kwargs):
-  kwargs['deps'] += ['//:vendor_autoload', '//:vendor_phpunit']
+  kwargs['deps'] += ['@phpunit//:phpunit']
   kwargs['type'] = "test";
   kwargs['bootstrap'] = True
   _php_test(**kwargs)
 
 
 def php_image(name, base=None, deps=[], layers=[], **kwargs):
-  """Constructs a container image wrapping a php_executable target.
+  """Constructs a container image wrapping a php_binary target.
   Args:
     layers: Augments "deps" with dependencies that should be put into
            their own layers.
-    **kwargs: See php_executable.
+    **kwargs: See php_binary.
   """
   DEFAULT_BASE = "@php56_base//image"
   binary_name = name + "_img_bin"
 
-  php_executable(name=binary_name, deps=deps + layers, **kwargs)
+  php_binary(name=binary_name, deps=deps + layers, **kwargs)
 
   index = 0
   base = base or DEFAULT_BASE

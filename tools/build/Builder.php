@@ -20,9 +20,7 @@ class Builder {
     }
 
     if ($bootstrap) {
-      echo "Bootstraping {$target}\n";
       self::bootstrap($type, $out_dir, $php_files, $deps, $target);
-      echo "Successfully bootstrapped target {$target}.\n";
     }
   }
 
@@ -50,7 +48,7 @@ class Builder {
                  $vars);
     self::runCommand($out_file, "Failed bootstrapping target {$target}");
 
-    if ($type == "executable")  {
+    if ($type == "binary")  {
       $exe_file = "${out_dir}/{$target_dir}/{$target}";
       self::concat($exe_file,
                    array("autoload_template.php", "exe_template.php"),
@@ -84,12 +82,10 @@ class Builder {
     if (!file_exists($dest_dir)) {
       mkdir($dest_dir, 0755, true);
     }
-    echo "Placing file: $filename\n";
     copy($filename, $dest_file);
   }
 
   private static function checkSyntax($filename) {
-    echo "Checking syntax: $filename\n";
     self::runCommand(
         "php -l $filename > /dev/null", "Invalid syntax in $filename");
   }

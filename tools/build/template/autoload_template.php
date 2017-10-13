@@ -4,7 +4,10 @@
 
 define("{target_app_root}", realpath(__DIR__ . "/{relpath}"));
 
-require_once({target_app_root} . "/vendor/autoload.php");
+# TODO(kburnik): Consider making this static from list of external deps.
+foreach(glob({target_app_root} . "/external/*/autoload.php") as $external) {
+  require_once($external);
+}
 
 spl_autoload_register(function($class) {
   static $dependencyWhitelist = {deps};
