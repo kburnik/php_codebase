@@ -8,7 +8,7 @@ provides several advantages:
    source files.
 2. Binds code modules through specified dependencies. You don't have to care
    about `include` or `require`, only the `use` keyword for `namespace`s and
-   class autoloading. Bootstrapping the libraries should take care of the rest.
+   class autoloading - bootstrapping the libraries should take care of the rest.
 3. Only affected targets get rebuilt. You don't have to run the entire test
    suite on each change, only the files which can actually be affected, provided
    you don't break the target encapsulation. Bazel does this out of the box.
@@ -21,11 +21,11 @@ production.
 
 Build rules
 
-* php_library - a set of PHP files which are checked and bootstrapped
+* php_library - a set of PHP files which are checked and bootstrapped.
+* php_binary - same as library, with an extra entry point named by the
+  target.
 * php_test - same as library, with an extra test runner executable named by the
-  target
-* php_executable - same as library, with an extra entry point named by the
-  target
+  target.
 * php_image - same as executable, but as a docker image instead.
 
 Workspace rules
@@ -33,8 +33,6 @@ Workspace rules
 * composer_php_library - simple wrapper for fetching a composer library and
   placing the vendor directory into {project_root}/external/{target_name}, you
   can simply reference this as a dependency, see the phpunit target as example.
-
-Unit testing is performed with PHPUnit.
 
 ## Setup instructions
 
@@ -52,12 +50,12 @@ the conventional concept of those terms.
 Building ensures that all source files have valid syntax and can reach runtime.
 It also extracts only the required files from the entire source tree which get
 executed. It is therefore easy to package and ship those files either as a
-container or an application in a traditional sense.
+container or an application in the traditional sense (folder with PHP files).
 
 Here we touch on the build rules associated with building PHP code:
 
 * PHP library
-* PHP executable
+* PHP binary
 * PHP test
 
 ### PHP library
@@ -70,9 +68,9 @@ living in other source tree directories.
 To build a library is in essence to copy the source files into an output
 directory, preserving the path structure and not modifying any code.
 
-### PHP executable
+### PHP binary
 
-A PHP executable is a single script file which executes PHP code, meaning it
+A PHP binary is a single script file which executes PHP code, meaning it
 takes inputs and produces outputs. An executable may depend on PHP libraries.
 The main file should have a `function main($args) {}` and this is considered
 the entry point method.
@@ -99,9 +97,9 @@ runtime.
 
 This is achieved by generating an autoload function with whitelisted sources as
 bazel does not remove files of a built target if you remove a dependency to it
-from another target. This holds for php_library, php_executable and php_test.
+from another target. This holds for php_library, php_binary and php_test.
 
-When building a library, the source files are only loaded as to find any issue
+When building a library, the source files are only loaded so to find any issue
 in static references outside scoped code (e.g. outside classes, such as an
 extended class). This ensures that if we, for example extend a class from an
 external dependency, that the base class can be autoloaded (i.e. is
@@ -112,16 +110,121 @@ function generated for the executable script or test runner also has whitelisted
 sources. The only difference is we also generate the code to achieve the
 runtime: invoking tests or running the main().
 
+
+## Style guide
+
+There's no particular style guide imposed for the code layout, however the build
+rules do expect some structure in your source files.
+
+### Namespacing
+
+Each source file should have it's namespace which matches the full directory
+path from the project root. So having a foo/bar/baz.php would have:
+
+```php
+namespace foo\bar;
+```
+
+And the Baz class should be referenced as:
+
+```php
+use foo\bar\Baz;
+```
+
+For external dependencies, such as composer libraries, use their canonical
+namespaces. For example:
+
+```php
+use PHPUnit\Framework\TestCase;
+```
+
+### Classes
+
+Each source file should encapsulate the code into a class, similar to Java. The
+class name should exactly match the source file's basename without the
+extension. Example:
+
+File: foo/bar/MyClass.php
+
+```php
+<?php
+
+namespace foo\bar;
+
+class MyClass {}
+```
+
+Multiple classes per file are allowed, but discouraged. Only if you consider
+those classes as private, then place them into the same file.
+
+### Libraries
+
+Libraries should not execute code, only declare symbols such as classes,
+interfaces, traits, functions and constants.
+
+Using `define()` is discouraged, rather have a `Constants` class and put them
+there.
+
+### Binaries
+
+A binary should have one top-level class named after the file, for example:
+
+File: foo/bar/AddArgs.php
+
+```php
+<?php
+
+namespace foo\bar;
+
+class AddArgs {
+  public static function main($args) {
+    echo array_sum($args) . "\n";
+    return 0;
+  }
+}
+```
+
+The class must have the `public static function main()` which is the entry
+point.
+
+Also notice how you should provide an exit code, similar how a C program would
+return 0 on success. If you return nothing, the bootstrapping script calling
+main will convert this to 0.
+
+Binaries, as well as libraries can have a test target. You only need to specify
+the target in the php_test deps.
+
+### Static files
+
+You can have static files for configurations, templates, default data or other
+use cases, for now you can specify all these files into the target's srcs
+attribute. To get the absolute path, you'll need to use the app root path
+which is defined in the binary target's bootstrapper (e.g. for
+the target foo/bar:add_args you would use APP_ROOT_FOO_BAR_ADD_ARGS).
+
+In the future, expect to have a `data` attribute and a simple API for these
+resources.
+
+
 ## TODO
 
-Check that dependencies are actually used, i.e. need a build cleaner.
+* Add `data` attribute for php_rule, to reference static sources. Also add
+  data_file method to resolve the path to a static resource or consider having
+  a Resource class to handle access to these files.
 
-Devise a way to automatically add dependencies based on PHP use statements.
+* Consider doing apriory symbol bootstraping - for example, find all PHP tokens
+  of type T_STRING which refer to a class/interface/trait, resolve their
+  namespace and load them. This proved to be harder to do than initially
+  anticipated.
 
-Install PHP beautifier (can't do newlines properly)
+* Check that dependencies are actually used, i.e. need a build cleaner.
+
+* Devise a way to automatically add dependencies based on PHP use statements.
+
+* Install PHP beautifier (can't do newlines properly)
 
 `sudo pear install channel://pear.php.net/PHP_Beautifier-0.1.15`
 
-Install php-cs-fixer (can't do indent of 2 spaces)
+* Install php-cs-fixer (can't do indent of 2 spaces)
 
 `composer global require friendsofphp/php-cs-fixer`
