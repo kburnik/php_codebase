@@ -45,7 +45,7 @@ This is a simplified dependency graph of the project:
   base/math/complex:complex (complex number representation)           |
             ^       ^                                                 |
             |       |                                                 |
-            |      base/math/complex:complex (unit test) -------------|
+            |      base/math/complex:complex_test (unit test) --------|
             |                                                         |
   app/calc:calc (calculator app)                                      |
                     ^                                                 |
@@ -64,7 +64,7 @@ Build rules
   target.
 * **php_test** - same as library, with an extra test runner executable named by
   the target.
-* **php_image** - same as executable, but as a docker image instead.
+* **php_image** - same as binary, but as a docker image instead.
 
 Workspace rules
 
