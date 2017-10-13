@@ -10,16 +10,48 @@ class Builder {
   /** Builds a PHP target. */
   public static function build(
       $type, $out_dir, $srcs, $deps, $target) {
-    $php_files = array();
-    foreach ($srcs as $src) {
-      if (strtolower(substr($src, -4)) == ".php") {
-        self::checkSyntax($src);
-        $php_files[] = $src;
+    if ($type == "resource") {
+      foreach ($srcs as $src) {
+        self::placeFile($src, $out_dir);
       }
-      self::placeFile($src, $out_dir);
+      self::create_resource($out_dir, $srcs);
+    } else {
+      $php_files = array();
+
+      foreach ($srcs as $src) {
+        if (strtolower(substr($src, -4)) == ".php") {
+          self::checkSyntax($src);
+          $php_files[] = $src;
+        }
+        self::placeFile($src, $out_dir);
+      }
+
+      self::bootstrap($type, $out_dir, $php_files, $deps, $target);
+    }
+  }
+
+  public static function create_resource($out_dir, $data) {
+    $path_parts = explode("/", $data[0]);
+    array_pop($path_parts);
+    $target_dir = implode("/", $path_parts);
+    $namespace = implode("\\", $path_parts);
+    $root_path = implode("/", $path_parts);
+
+    $files = array();
+    foreach ($data as $path) {
+      if (substr($path, 0, strlen($root_path)) == $root_path) {
+        $path = substr($path, strlen($root_path) + 1);
+      }
+      $files[] = $path;
     }
 
-    self::bootstrap($type, $out_dir, $php_files, $deps, $target);
+    $vars = array('{namespace}' => $namespace,
+                  '{data}' => var_export($files, true));
+
+    $out_file = "${out_dir}/{$target_dir}/StaticResource.php";
+    self::concat($out_file,
+                 array("resource_template.php"),
+                 $vars);
   }
 
   private static function bootstrap($type, $out_dir, $srcs, $deps, $target) {

@@ -17,7 +17,7 @@ provides several advantages:
 **Note:** This is still highly experimental and should not be used in
 production.
 
-The example application in this repository is a clunky complex number
+The first example application in this repository is a clunky complex number
 calculator.
 
 For example, you may run:
@@ -54,6 +54,20 @@ This is a simplified dependency graph of the project:
 
 ```
 
+The second example is an app which reads an integer index and outputs a story
+associated with that index. This serves as an example for accessing static
+data from source files.
+
+```
+        app/story/data (static data)  @phpunit//:phpunit (external composer lib)
+            ^                     ^          ^
+            |                     |          |
+  app/story:story (story app)     |          |
+                   ^              |          |
+                   |              |          |
+                  app/story:story_test (unit test)
+
+```
 
 ## Current features
 
@@ -65,6 +79,7 @@ Build rules
 * **php_test** - same as library, with an extra test runner executable named by
   the target.
 * **php_image** - same as binary, but as a docker image instead.
+* **php_resource** - a static resource library, e.g. for reading static files.
 
 Workspace rules
 
@@ -243,21 +258,12 @@ the target in the php_test deps.
 
 ### Static files
 
-You can have static files for configurations, templates, default data or other
-use cases, for now you can specify all these files into the target's srcs
-attribute. To get the absolute path, you'll need to use the app root path
-which is defined in the binary target's bootstrapper (e.g. for
-the target foo/bar:add_args you would use APP_ROOT_FOO_BAR_ADD_ARGS).
-
-In the future, expect to have a `data` attribute and a simple API for these
-resources.
-
+For accessing static files such as templates, default data and other content
+which should live in separate files, rather than source code, use the
+`php_resource` rule. This will create a library with a `StaticResource` class
+which you can access in the source files. See the app/story as an example.
 
 ## TODO
-
-* Add `data` attribute for php_rule, to reference static sources. Also add
-  data_file method to resolve the path to a static resource or consider having
-  a Resource class to handle access to these files.
 
 * Consider doing apriory symbol bootstraping - for example, find all PHP tokens
   of type T_STRING which refer to a class/interface/trait, resolve their
