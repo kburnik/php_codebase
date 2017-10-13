@@ -112,18 +112,19 @@ directory, preserving the path structure and not modifying any code.
 
 A PHP binary is a single script file which executes PHP code, meaning it
 takes inputs and produces outputs. An executable may depend on PHP libraries.
-The main file should have a `function main($args) {}` and this is considered
-the entry point method.
+The main file should have a class with `public static function main($args) {}`,
+similar to Java or C# and this is considered the entry point method.
 
 Building an executable is achieved through copying the executable source files,
 all transitive dependencies (i.e. libraries) to their respective directories and
 also produce a bootstrapping entry point which handles autoloading of symbols,
-includes the executable sources and calls the `main()`.
+includes the executable sources and calls
+`YourMainClass::main(array_slice($argv, 1))`.
 
 ### PHP test
 
 A PHP test is a library which can execute test methods from test case classes. A
-test usually depends at least on one library or an executable.
+test usually depends on at least one library or an executable.
 
 To build a PHP test is similar as to building a library, the main difference is
 we also produce an executable file which runs all the test cases.
@@ -135,7 +136,7 @@ Bootstrapping a PHP target is like doing a dry-run on the source code, which
 implies loading all the sources to try and find dependency issues before actual
 runtime.
 
-This is achieved by generating an autoload function with whitelisted sources as
+This is achieved by generating an autoload function with whitelisted sources, as
 bazel does not remove files of a built target if you remove a dependency to it
 from another target. This holds for php_library, php_binary and php_test.
 
