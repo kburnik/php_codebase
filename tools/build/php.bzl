@@ -19,11 +19,9 @@ def _build_impl(ctx):
   lib_outputs = depset()
   out_dir = ""
   for src in ctx.files.srcs:
-    out_file = ctx.actions.declare_file(
-        (src.path if ctx.attr.recursive else src.basename))
+    out_file = ctx.actions.declare_file(src.basename)
     lib_outputs += [out_file]
     out_dir = out_file.root.path
-
 
   if ctx.attr.type != "library":
     lib_outputs += [ctx.outputs.executable]
@@ -35,8 +33,7 @@ def _build_impl(ctx):
                 ["--out", out_dir] +
                 ["--src"] + direct_src_files +
                 ["--dep"] + [f.short_path for f in deps_src_files] +
-                ["--target", ctx.label.name] +
-                (["--bootstrap"] if ctx.attr.bootstrap else []),
+                ["--target", ctx.label.name],
       progress_message="Building lib %s" % ctx.label.name,
       executable=ctx.executable._build)
 
@@ -52,8 +49,6 @@ build_common = {
   "attrs": {
       "srcs": attr.label_list(allow_files=True),
       "deps": attr.label_list(allow_files=False),
-      "recursive": attr.bool(default=False),
-      "bootstrap": attr.bool(default=True),
       "type": attr.string(default="library"),
       "_build": attr.label(executable=True,
                            cfg="host",
@@ -87,14 +82,12 @@ def php_library(**kwargs):
 
 def php_binary(**kwargs):
   kwargs['type'] = "binary"
-  kwargs['bootstrap'] = True
   _php_binary_rule(**kwargs)
 
 
 def php_test(**kwargs):
   kwargs['deps'] += ['@phpunit//:phpunit']
   kwargs['type'] = "test";
-  kwargs['bootstrap'] = True
   _php_test(**kwargs)
 
 

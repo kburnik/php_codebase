@@ -3,6 +3,7 @@
 namespace app\calc;
 
 use base\math\complex\Complex;
+use \Exception;
 
 class Calc {
   public static function main($args) {

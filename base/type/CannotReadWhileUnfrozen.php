@@ -4,7 +4,7 @@ namespace base\type;
 
 use base\except\MemberAccessException;
 
-/** Accessed member of the class does not exist. */
+/** Trying to read a member of an immutable object before it was frozen. */
 class CannotReadWhileUnfrozen extends MemberAccessException {
   // @override
   protected function buildMesasge($className, $member) {

@@ -4,12 +4,12 @@ namespace tools\build;
 
 use \Exception;
 
-/** PHP library buider. */
+/** PHP target buider (library, binary or test). */
 class Builder {
 
-  /** Builds a PHP library. */
+  /** Builds a PHP target. */
   public static function build(
-      $type, $out_dir, $srcs, $deps, $target, $bootstrap) {
+      $type, $out_dir, $srcs, $deps, $target) {
     $php_files = array();
     foreach ($srcs as $src) {
       if (strtolower(substr($src, -4)) == ".php") {
@@ -19,9 +19,7 @@ class Builder {
       self::placeFile($src, $out_dir);
     }
 
-    if ($bootstrap) {
-      self::bootstrap($type, $out_dir, $php_files, $deps, $target);
-    }
+    self::bootstrap($type, $out_dir, $php_files, $deps, $target);
   }
 
   private static function bootstrap($type, $out_dir, $srcs, $deps, $target) {

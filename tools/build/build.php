@@ -19,9 +19,8 @@ class Build {
     $srcs = $opts->get_list('src', /*must_have_elements=*/true);
     $deps = $opts->get_list('dep');
     $target = $opts->get_string('target');
-    $bootstrap = $opts->has('bootstrap');
 
-    Builder::build($type, $out_dir, $srcs, $deps, $target, $bootstrap);
+    Builder::build($type, $out_dir, $srcs, $deps, $target);
   }
 }
 

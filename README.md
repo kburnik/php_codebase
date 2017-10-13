@@ -17,20 +17,58 @@ provides several advantages:
 **Note:** This is still highly experimental and should not be used in
 production.
 
+The example application in this repository is a clunky complex number
+calculator.
+
+For example, you may run:
+
+```sh
+bazel run app/calc:calc -- "3+3i * 2+4i"
+```
+
+To get the output:
+```
+-6 + 18i
+```
+
+This is a simplified dependency graph of the project:
+
+```
+  base/except:except (exceptions)  @phpunit//:phpunit (external composer lib)
+            ^                                                         ^
+            |                                                         |
+  base/type:immutable (immutable object class)                        |
+            ^       ^                                                 |
+            |       |                                                 |
+            |      base/type:immutable_test (unit test) --------------|
+            |                                                         |
+  base/math/complex:complex (complex number representation)           |
+            ^       ^                                                 |
+            |       |                                                 |
+            |      base/math/complex:complex (unit test) -------------|
+            |                                                         |
+  app/calc:calc (calculator app)                                      |
+                    ^                                                 |
+                    |                                                 |
+                   app/calc:calc_test (unit test for the app) ________|
+
+```
+
+
 ## Current features
 
 Build rules
 
-* php_library - a set of PHP files which are checked and bootstrapped.
-* php_binary - same as library, with an extra entry point named by the
+* **php_library** - a set of PHP files which are checked and bootstrapped.
+* **php_binary** - same as library, with an extra entry point named by the
   target.
-* php_test - same as library, with an extra test runner executable named by the
-  target.
-* php_image - same as executable, but as a docker image instead.
+* **php_test** - same as library, with an extra test runner executable named by
+  the target.
+* **php_image** - same as executable, but as a docker image instead.
 
 Workspace rules
 
-* composer_php_library - simple wrapper for fetching a composer library and
+* **composer_repository** - a wrapper for fetching a composer library and
   placing the vendor directory into {project_root}/external/{target_name}, you
   can simply reference this as a dependency, see the phpunit target as example.
 
@@ -39,6 +77,8 @@ Workspace rules
 * Install bazel
 
 * Install docker if you want to build images
+
+* Pull in this repository with git
 
 Working with PHP 5.6. Planning to add support for PHP 7.0, 7.1
 
@@ -136,6 +176,12 @@ namespaces. For example:
 
 ```php
 use PHPUnit\Framework\TestCase;
+```
+
+It's common to forget including Exception from the root namespace:
+
+```php
+use \Exception;
 ```
 
 ### Classes
