@@ -15,6 +15,7 @@ php_test(
   deps=[
     ":calc"
   ],
+  size="small",
 )
 
 filegroup(name="calc_files", srcs=[":calc"])
