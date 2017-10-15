@@ -79,7 +79,7 @@ class Laravel {
     }
 
     $removed = $this->removeFiles(
-        ['composer.*', 'phpunit.xml', 'readme.md', '.evn.example']);
+        ['composer.*', 'phpunit.xml', 'readme.md', '.env.example']);
     if ($removed == 0) {
       echo "Skipped file removal: already removed\n";
     }
