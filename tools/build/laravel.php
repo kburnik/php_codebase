@@ -61,6 +61,9 @@ class Laravel {
     echo "Target: {$this->name}\n";
 
     $parentDir = dirname($this->targetDir);
+    if (!file_exists($parentDir)) {
+      mkdir($parentDir, 0755, true);
+    }
     $cwd = getcwd();
 
     chdir($parentDir);
