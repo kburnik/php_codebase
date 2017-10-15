@@ -193,8 +193,6 @@ class Laravel {
       return strlen($a) < strlen($b);
     });
 
-    print_r($namespaceMap);
-
     // Update namespace references.
     if (count($namespaceMap)) {
       foreach ($srcs as $src) {
@@ -204,7 +202,6 @@ class Laravel {
           '/^use (.*);$/',
           '/^(.*)::class(.*)$/',
         ];
-
         $newContent = self::replaceForFirstMatchingPatternInLines(
             $patterns, $namespaceMap, $newContent);
         $modifyCount += $this->safeReplaceSource($src, $newContent);
