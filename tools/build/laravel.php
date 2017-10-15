@@ -11,6 +11,14 @@ use \ErrorException;
 require_once(__DIR__ . '/Options.php');
 
 class Laravel {
+  const NAMESPACE_PATTERN = '/^namespace (.*?);\s*$/m';
+
+  // Patterns referring to transient namespaces.
+  private static $usePatterns = [
+      '/^use (.*);$/',      # Must have namespace at \1
+      '/^(.*)::class(.*)$/' # Must have namespace at \1
+  ];
+
   private static $tempFiles = [];
 
   private $targetDir;
@@ -103,6 +111,73 @@ class Laravel {
 
   private function createBuildFiles() {
     $srcs = $this->getSourceFiles();
+
+    $namespaceTarget = [];
+    // Build the dependency graph.
+    foreach ($srcs as $src) {
+      $content = file_get_contents($src);
+      if (preg_match_all(self::NAMESPACE_PATTERN, $content, $matches)) {
+        foreach ($matches[1] as $match) {
+          $namespaceTarget[$match] =
+              "//" . substr(dirname($src), strlen($this->rootDir) + 1);
+        }
+      }
+    }
+
+    uksort(
+        $namespaceTarget,
+        array('\tools\build\Laravel', 'compareLengthDesc'));
+
+    // TODO(kburnik): Refactor this utter mess.
+    $namespaces = array_keys($namespaceTarget);
+    $namespaceDepFolders = [];
+    foreach ($srcs as $src) {
+      $content = file_get_contents($src);
+      $shortPath =  substr($src, strlen($this->rootDir) + 1);
+      $srcTarget = "//" . dirname($shortPath);
+
+      foreach (self::$usePatterns as $usePattern) {
+        $matches = [];
+        $usePattern .= "m";
+        if (!preg_match_all($usePattern, $content, $matches))  {
+          continue;
+        }
+
+        foreach ($matches[1] as $match) {
+          foreach ($namespaces as $namespace) {
+            if (strpos($match, $namespace) === false) {
+              continue;
+            }
+
+            $depDir = dirname($src);
+            $depTarget = $namespaceTarget[$namespace];
+
+            if ($depTarget == $srcTarget) {
+              continue;
+            }
+
+            echo "{$depDir}: {$depTarget}\n";
+            $namespaceDepFolders[$depDir][$depTarget] = true;
+
+            // Break on first match.
+            break;
+          } // over namespaces
+        } // over matches
+      } // over usePatterns
+    } // over srcs
+
+    // Normalize deps.
+    foreach ($namespaceDepFolders as $depDir => $map) {
+      $namespaceDepFolders[$depDir] = array_keys($map);
+    }
+
+    echo "Namespace to Target ";
+    print_r($namespaceTarget);
+
+
+    echo "Deps ";
+    print_r($namespaceDepFolders);
+
     $dirs = array();
     $index = 0;
     foreach ($srcs as $src) {
@@ -121,7 +196,12 @@ class Laravel {
       if ($targetName == "")
         $targetName = $this->$name;
 
-      $deps = ["@laravel//:laravel"];
+      $computedDeps = array();
+      if (array_key_exists($dir, $namespaceDepFolders)) {
+        $computedDeps = $namespaceDepFolders[$dir];
+      }
+
+      $deps = array_merge($computedDeps, ["@laravel//:laravel"]);
       $vars =  [
         '{targetName}' => $targetName,
         '{targetShortPath}' => $this->targetShortPath,
@@ -166,8 +246,7 @@ class Laravel {
 
       // Namespace fix.
       $matches = [];
-      $namespacePattern = '/^namespace (.*?);\s*$/m';
-      if (preg_match_all($namespacePattern, $newContent, $matches)) {
+      if (preg_match_all(self::NAMESPACE_PATTERN, $newContent, $matches)) {
         foreach ($matches[1] as $match) {
           if ($match != $namespace) {
             $namespaceMap[$match] = $namespace;
@@ -189,19 +268,13 @@ class Laravel {
       $modifyCount += $this->safeReplaceSource($src, $newContent);
     }
 
-    uksort($namespaceMap, function($a, $b) {
-      return strlen($a) < strlen($b);
-    });
+    uksort($namespaceMap, array('\tools\build\Laravel', 'compareLengthDesc'));
 
     // Update namespace references.
     if (count($namespaceMap)) {
       foreach ($srcs as $src) {
         $newContent = file_get_contents($src);
-        $patterns = [
-          '/^namespace (.*);$/',
-          '/^use (.*);$/',
-          '/^(.*)::class(.*)$/',
-        ];
+        $patterns = array_merge(['/^namespace (.*);$/'], self::$usePatterns);
         $newContent = self::replaceForFirstMatchingPatternInLines(
             $patterns, $namespaceMap, $newContent);
         $modifyCount += $this->safeReplaceSource($src, $newContent);
@@ -341,6 +414,10 @@ class Laravel {
         unlink($filename);
       }
     }
+  }
+
+  private static function compareLengthDesc($a, $b) {
+    return strlen($a) < strlen($b);
   }
 
   private static function runCommand($cmd) {
