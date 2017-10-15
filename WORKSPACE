@@ -7,6 +7,13 @@ composer_repository(
   digest="sha256:deadbeef"
 )
 
+composer_repository(
+  name="laravel",
+  package="laravel/laravel",
+  # TODO(kburnik): Implement sha256 check
+  digest="sha256:deadbeef"
+)
+
 git_repository(
     name = "io_bazel_rules_docker",
     remote = "https://github.com/bazelbuild/rules_docker.git",

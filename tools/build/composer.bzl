@@ -4,6 +4,7 @@ def _composer_repository_impl(repository_ctx):
   repository_ctx.execute(
       [repository_ctx.attr.composer_bin,
        'require',
+       '--prefer-dist',
        repository_ctx.attr.package],
       quiet=False
   )

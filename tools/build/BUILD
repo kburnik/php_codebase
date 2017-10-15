@@ -13,3 +13,13 @@ sh_binary(
   ],
   visibility=["//visibility:public"]
 )
+
+sh_binary(
+  name="laravel",
+  srcs=["laravel.php"],
+  data=[
+    "//tools/build/template",
+    "Options.php"
+  ],
+  visibility=["//visibility:public"]
+)

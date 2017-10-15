@@ -8,8 +8,8 @@ require_once(__DIR__ . '/Builder.php');
 require_once(__DIR__ . '/Options.php');
 
 class Build {
-  public static function main($argv) {
-    $opts = Options::parse($argv);
+  public static function main($args) {
+    $opts = Options::parse($args);
     if ($opts->has('verbose')) {
        $opts->show();
     }
@@ -24,4 +24,4 @@ class Build {
   }
 }
 
-Build::main($argv);
+Build::main(array_slice($argv, 1));
