@@ -6,7 +6,7 @@
 namespace tools\build;
 
 use \Exception;
-use \php_check_syntax;
+use \ErrorException;
 
 require_once(__DIR__ . '/Options.php');
 
@@ -21,6 +21,9 @@ class Laravel {
 
   public static function main($args) {
     register_shutdown_function(array('\\Tools\\build\\Laravel', 'cleanUp'));
+    set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+      throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
+    });
 
     $opts = Options::parse($args);
     if ($opts->has('verbose')) {
@@ -89,14 +92,10 @@ class Laravel {
       echo "Skipped source file updates: already up to date\n";
     }
 
-    return;
-
     if ($this->createBuildFiles() == 0) {
       echo "Skipped create BUILD files: already up to date\n";
     }
-
   }
-
 
   private function updateBootstrapAutoload() {
     // "{$this->targetDir}/bootstrap/autoload.php":
@@ -171,9 +170,7 @@ class Laravel {
       if (preg_match_all($namespacePattern, $newContent, $matches)) {
         foreach ($matches[1] as $match) {
           if ($match != $namespace) {
-            $namespaceMap["\\{$match}"] = "\\{$namespace}";
-            $newContent = preg_replace(
-              $namespacePattern, "namespace {$namespace};", $newContent);
+            $namespaceMap[$match] = $namespace;
           }
         }
       }
@@ -183,9 +180,7 @@ class Laravel {
           preg_replace('/(.*?)\n\s*{/s', '\1 {', $newContent);
 
       // Double spaces instead of quadruple.
-      // Assume if there were changes above, we can do this now (once only).
-      # TODO(kburnik): There should be a less error-prone way of doing this.
-      if ($content != $newContent) {
+      if (!preg_match_all('/^\s\s(?!\s).*$/m', $newContent, $matches)) {
         $newContent = str_replace(str_repeat(" ", 4),
                                   str_repeat(" ", 2),
                                   $newContent);
@@ -194,16 +189,47 @@ class Laravel {
       $modifyCount += $this->safeReplaceSource($src, $newContent);
     }
 
+    uksort($namespaceMap, function($a, $b) {
+      return strlen($a) < strlen($b);
+    });
+
+    print_r($namespaceMap);
+
     // Update namespace references.
     if (count($namespaceMap)) {
       foreach ($srcs as $src) {
-        $content = file_get_contents($src);
-        $newContent = strtr($content, $namespaceMap);
+        $newContent = file_get_contents($src);
+        $patterns = [
+          '/^namespace (.*);$/',
+          '/^use (.*);$/',
+          '/^(.*)::class(.*)$/',
+        ];
+
+        $newContent = self::replaceForFirstMatchingPatternInLines(
+            $patterns, $namespaceMap, $newContent);
         $modifyCount += $this->safeReplaceSource($src, $newContent);
       }
     }
 
     return $modifyCount;
+  }
+
+  private static function replaceForFirstMatchingPatternInLines(
+        $patterns, $replacements, $subject) {
+    $lines = explode("\n", $subject);
+
+    foreach ($lines as $i => $line) {
+      foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $line)) {
+          $lines[$i] = strtr($line, $replacements);
+          if ($line != $lines[$i]) {
+            break;
+          }
+        }
+      }
+    }
+
+    return implode("\n", $lines);
   }
 
   private function renameDirectories() {
@@ -242,7 +268,12 @@ class Laravel {
       return 0;
 
     // Check syntax before saving.
-    $this->checkSyntax($newContent);
+    try {
+      $this->checkSyntax($newContent);
+    } catch(Exception $ex) {
+      print_r($newContent);
+      throw $ex;
+    }
     file_put_contents($src, $newContent);
 
     return 1;
