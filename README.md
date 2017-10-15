@@ -265,6 +265,9 @@ which you can access in the source files. See the app/story as an example.
 
 ## TODO
 
+* php_image target requires src and deps, it should also be able to work with
+  simply referencing a php_binary as to avoid having conflicting actions.
+
 * Consider doing apriory symbol bootstraping - for example, find all PHP tokens
   of type T_STRING which refer to a class/interface/trait, resolve their
   namespace and load them. This proved to be harder to do than initially
@@ -281,3 +284,25 @@ which you can access in the source files. See the app/story as an example.
 * Install php-cs-fixer (can't do indent of 2 spaces)
 
 `composer global require friendsofphp/php-cs-fixer`
+
+
+## Notes
+
+These notes are mostly bazel related tips and tricks which I occasionally find
+useful:
+
+### Find and run all tests
+
+```
+grep -r --include=BUILD -oP "name=\"(\K\w+_test)" | \
+  sed s#/BUILD## | \
+  xargs bazel test --test_output=errors
+```
+
+### Build all targets
+
+```
+grep -r --include=BUILD -oP "name=\"(\K\w+)" | \
+  sed s#/BUILD## | \
+  xargs bazel build
+```

@@ -12,5 +12,6 @@ php_test(
   deps=[
     ":story",
     "//app/story/data"
-  ]
+  ],
+  size="small",
 )
