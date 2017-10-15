@@ -6,10 +6,13 @@
 namespace tools\build;
 
 use \Exception;
+use \php_check_syntax;
 
 require_once(__DIR__ . '/Options.php');
 
 class Laravel {
+  private static $tempFiles;
+
   private $targetDir;
   private $rootDir;
   private $name;
@@ -17,6 +20,8 @@ class Laravel {
   private $rootNamespace;
 
   public static function main($args) {
+    register_shutdown_function(array('\\Tools\\build\\Laravel', 'cleanUp'));
+
     $opts = Options::parse($args);
     if ($opts->has('verbose')) {
        $opts->show();
@@ -84,10 +89,17 @@ class Laravel {
       echo "Skipped source file updates: already up to date\n";
     }
 
+    return;
+
     if ($this->createBuildFiles() == 0) {
       echo "Skipped create BUILD files: already up to date\n";
     }
 
+  }
+
+
+  private function updateBootstrapAutoload() {
+    // "{$this->targetDir}/bootstrap/autoload.php":
   }
 
   private function createBuildFiles() {
@@ -137,11 +149,9 @@ class Laravel {
     return $numBuildFiles;
   }
 
-  private function updateBootstrapAutoload() {
-    // "{$this->targetDir}/bootstrap/autoload.php":
-  }
-
   private function updateSourceFiles() {
+    // Mapping of old namespaces to new ones.
+    $namespaceMap = [];
     $srcs = $this->getSourceFiles();
     $modifyCount = 0;
     foreach ($srcs as $src) {
@@ -155,15 +165,14 @@ class Laravel {
       $newContent = $content;
 
       // Namespace fix.
-      $newContent = preg_replace(
-          "/^namespace (.*?);\s*$/", "namespace {$namespace};", $newContent);
-
-      // Replace the App namespace refrences.
-      // Assume if there were changes above, we can do this now (once only).
-      if ($content != $newContent) {
-        // TODO(kburnik): Handle setting to lowercase.
-        $newContent = preg_replace(
-            '/\\App(.*)/', "\\{$this->rootNamespace}", $newContent);
+      $matches = [];
+      $namespacePattern = '/^namespace (.*?);\s*$/m';
+      if (preg_match_all($namespacePattern, $newContent, $matches)) {
+        foreach ($matches[1] as $match) {
+          $namespaceMap["\\{$match}"] = "\\{$namespace}";
+          $newContent = preg_replace(
+            $namespacePattern, "namespace {$namespace};", $newContent);
+        }
       }
 
       // Braces position to K&R style.
@@ -178,16 +187,18 @@ class Laravel {
                                   $newContent);
       }
 
-      if ($content != $newContent) {
-        $tempFile = "{$src}.temp";
-        file_put_contents($tempFile, $newContent);
-        // Check syntax before saving.
-        self::runCommand(["php", "-l", $tempFile, "> /dev/null"]);
-        file_put_contents($src, $newContent);
-        $this->rm($tempFile);
-        $modifyCount++;
-      }
+      $modifyCount += $this->safeReplaceSource($src, $newContent);
     }
+
+    print_r($namespaceMap);
+
+    // Update namespace references.
+    foreach ($srcs as $src) {
+      $content = file_get_contents($src);
+      $newContent = strtr($content, $namespaceMap);
+      $modifyCount += $this->safeReplaceSource($src, $newContent);
+    }
+
     return $modifyCount;
   }
 
@@ -219,6 +230,36 @@ class Laravel {
     }
 
     return $renameCount;
+  }
+
+  private function safeReplaceSource($src, $newContent) {
+    $oldContent = file_get_contents($src);
+    if ($oldContent == $newContent)
+      return 0;
+
+    // Check syntax before saving.
+    $this->checkSyntax($newContent);
+    file_put_contents($src, $newContent);
+
+    return 1;
+  }
+
+  /** Checks PHP source code syntax. Throws with error message on failure. */
+  private function checkSyntax($sourceCode) {
+    $this->withTempFileOfContents($sourceCode, function($tempFile) {
+      self::runCommand(["php", "-l", $tempFile, "> /dev/null"]);
+    });
+  }
+
+  private function withTempFileOfContents($contents = "", $callback) {
+    $filename = tempnam("/tmp", "temp_php");
+    try {
+      self::$tempFiles[] = $filename;
+      file_put_contents($filename, $contents);
+      call_user_func($callback, $filename);
+    } finally {
+      unlink($filename);
+    }
   }
 
   private function removeFiles($patterns) {
@@ -259,6 +300,14 @@ class Laravel {
         $this->targetDir . "/") {
       throw new Exception(
           "Can't operate on files below: {$this->targetDir}. Got: {$dir}");
+    }
+  }
+
+  public static function cleanUp() {
+    foreach (self::$tempFiles as $filename) {
+      if (file_exists($filename)) {
+        unlink($filename);
+      }
     }
   }
 
