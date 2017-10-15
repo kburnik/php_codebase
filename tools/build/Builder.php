@@ -65,7 +65,7 @@ class Builder {
     $relpath = implode("/", array_fill(0, $path_len, ".."));
 
     $out_file = "${out_dir}/{$target_dir}/{$target}.bootstrap.php";
-    $all_deps = array_map('strtolower', array_merge($deps, $srcs));
+    $all_deps = array_merge($deps, $srcs);
     $vars = array('{srcs}' => var_export($srcs, true),
                   '{deps}' => var_export(array_flip($all_deps), true),
                   '{relpath}' => $relpath,
