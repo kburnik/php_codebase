@@ -11,7 +11,7 @@ use \php_check_syntax;
 require_once(__DIR__ . '/Options.php');
 
 class Laravel {
-  private static $tempFiles;
+  private static $tempFiles = [];
 
   private $targetDir;
   private $rootDir;
@@ -122,31 +122,32 @@ class Laravel {
       if ($targetName == "")
         $targetName = $this->$name;
 
+      $deps = ["@laravel//:laravel"];
+      $vars =  [
+        '{targetName}' => $targetName,
+        '{targetShortPath}' => $this->targetShortPath,
+        '{deps}' => str_replace("\\", "", json_encode($deps)),
+      ];
 
-      $deps = str_replace("\\", "", json_encode(["@laravel//:laravel"]));
-      $content =
-          'load("//tools/build:php.bzl", "php_library")' . $eol .
-          '' . $eol .
-          'php_library(' . $eol .
-          '  name="' . $targetName . '",' . $eol .
-          '  srcs=glob(["*.php"], exclude=["*Test.php"]),' . $eol .
-          '  deps=' . $deps . ',' . $eol .
-          '  visibility=["//' . $this->targetShortPath . ':__subpackages__"],' .
-              $eol .
-          ')' . $eol
-      ;
-
-      $buildFile = "{$dir}/BUILD";
-      if (file_exists($buildFile) &&
-          file_get_contents($buildFile) == $content) {
-        continue;
-      }
-
-      file_put_contents($buildFile, $content);
-      $numBuildFiles++;
+      $numBuildFiles +=
+          $this->createBuildFile($dir, "laravel_lib.BUILD.tpl", $vars);
     }
 
     return $numBuildFiles;
+  }
+
+  private function createBuildFile($directory, $templateFile, $vars) {
+    $template = file_get_contents(__DIR__ . "/template/$templateFile");
+    $buildFile = "{$directory}/BUILD";
+
+    $content = strtr($template, $vars);
+
+    if (file_exists($buildFile) && file_get_contents($buildFile) == $content) {
+      return 0;
+    }
+
+    file_put_contents($buildFile, $content);
+    return 1;
   }
 
   private function updateSourceFiles() {
@@ -169,9 +170,11 @@ class Laravel {
       $namespacePattern = '/^namespace (.*?);\s*$/m';
       if (preg_match_all($namespacePattern, $newContent, $matches)) {
         foreach ($matches[1] as $match) {
-          $namespaceMap["\\{$match}"] = "\\{$namespace}";
-          $newContent = preg_replace(
-            $namespacePattern, "namespace {$namespace};", $newContent);
+          if ($match != $namespace) {
+            $namespaceMap["\\{$match}"] = "\\{$namespace}";
+            $newContent = preg_replace(
+              $namespacePattern, "namespace {$namespace};", $newContent);
+          }
         }
       }
 
@@ -181,6 +184,7 @@ class Laravel {
 
       // Double spaces instead of quadruple.
       // Assume if there were changes above, we can do this now (once only).
+      # TODO(kburnik): There should be a less error-prone way of doing this.
       if ($content != $newContent) {
         $newContent = str_replace(str_repeat(" ", 4),
                                   str_repeat(" ", 2),
@@ -190,13 +194,13 @@ class Laravel {
       $modifyCount += $this->safeReplaceSource($src, $newContent);
     }
 
-    print_r($namespaceMap);
-
     // Update namespace references.
-    foreach ($srcs as $src) {
-      $content = file_get_contents($src);
-      $newContent = strtr($content, $namespaceMap);
-      $modifyCount += $this->safeReplaceSource($src, $newContent);
+    if (count($namespaceMap)) {
+      foreach ($srcs as $src) {
+        $content = file_get_contents($src);
+        $newContent = strtr($content, $namespaceMap);
+        $modifyCount += $this->safeReplaceSource($src, $newContent);
+      }
     }
 
     return $modifyCount;
